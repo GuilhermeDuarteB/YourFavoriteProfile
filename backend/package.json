@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -20,9 +21,5 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
-  },
-  "type": "module",
-"scripts": {
-  "dev": "nodemon server.js"
-}
+  }
 }
