@@ -29,8 +29,6 @@ async function loadProfile() {
   }
 }
 
-// Recarrega sempre que o :username na URL mudar
-// (ex: navegares de /gui para /joao sem sair do componente)
 watch(() => route.params.username, loadProfile, { immediate: true });
 
 function handleLogout() {
@@ -40,7 +38,7 @@ function handleLogout() {
 </script>
 
 <template>
-  <div v-if="loading">A carregar...</div>
+  <div v-if="loading"></div>
   <div v-else-if="error">{{ error }}</div>
   <div v-else-if="profile">
     <h1>{{ profile.username }}</h1>
