@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import {createUser, findUserByEmail} from '../models/userModel.js';
+import {createUser, findUserByEmail, findUserByUsername} from '../models/userModel.js';
 
 
 const SALT_ROUNDS = 10;
@@ -19,6 +19,11 @@ export async function register(req, res) {
         if (existingUser) {
             return res.status(409).json({message: 'Email already in use'});
 
+        }
+
+        const existingUsername = await findUserByUsername(username);
+        if (existingUsername) {
+            return res.status(409).json({error: 'Username already in use'});
         }
 
         const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);

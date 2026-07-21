@@ -34,7 +34,7 @@ async function handleSubmit() {
       email: email.value,
       password: password.value,
     });
-    router.push({ name: 'home' });
+    router.push({ name: 'profile', params: { username: authStore.user.username } });
   } catch (err) {
     error.value = err.response?.data?.error || 'Error registering';
   } finally {
@@ -267,5 +267,38 @@ button:disabled {
 
 .switch a:hover {
   text-decoration: underline;
+}
+
+
+@media (max-width: 1024px) {
+  .form {
+    width: 40%;
+  }
+}
+
+@media (max-width: 768px) {
+  .form {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 100vh;
+    padding: 60px 24px;
+  }
+
+  .form-logo img {
+    height: 60px;
+    width: 60px;
+  }
+
+  .form-logo h1 {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .form {
+    padding: 40px 16px;
+  }
 }
 </style>

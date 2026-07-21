@@ -22,3 +22,21 @@ export async function findUserById(id){
     const result = await pools.query('SELECT id, username, bio, email, avatar_url, created_at from users WHERE id = $1', [id]);
     return result.rows[0];
 }
+
+export async function findUserByUsername(username) {
+  const result = await pools.query(
+    'SELECT id FROM users WHERE username = $1',
+    [username]
+  );
+  return result.rows[0];
+}
+
+export async function searchUsersByUsername(query) {
+  const result = await pools.query(
+    `SELECT id, username, avatar_url FROM users
+     WHERE username ILIKE $1
+     LIMIT 20`,
+    [`%${query}%`]
+  );
+  return result.rows;
+}

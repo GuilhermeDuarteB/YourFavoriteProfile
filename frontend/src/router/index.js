@@ -12,7 +12,7 @@ const routes = [
   { path: '/', name: 'home', component: HomeView },
   { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
   { path: '/register', name: 'register', component: RegisterView, meta: { guestOnly: true } },
-  { path: '/profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true } },
+  { path: '/:username', name: 'profile', component: ProfileView},
   { path: '/search', name: 'search', component: SearchView },
 
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },    
