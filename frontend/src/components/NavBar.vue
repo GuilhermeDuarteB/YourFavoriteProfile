@@ -1,17 +1,18 @@
 <script setup>
 import { useAuthStore } from '../stores/authStore';
-import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
-const router = useRouter();
 </script>
 
 <template>
   <nav>
-    <div class="brand">
-      <div class="brand-mark">YF</div>
+    <router-link to="/" class="brand">
+      <div class="brand-mark">
+        <img src="../assets/ifp-logo.png" alt="Your Favorite Profile logo" />
+      </div>
       Your Favorite Profile
-    </div>
+    </router-link>
+
     <div class="nav-links">
       <router-link to="/movies">Movies</router-link>
       <router-link to="/series">Series</router-link>
@@ -43,11 +44,17 @@ nav {
   position: sticky; top: 0; background: rgba(11,13,18,0.9); backdrop-filter: blur(8px);
   z-index: 10;
 }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+.brand {
+  display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px;
+  color: var(--text);
+}
 .brand-mark {
-  width: 30px; height: 30px; border-radius: 8px;
-  background: linear-gradient(135deg, var(--blue), var(--navy));
-  display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800;
+  width: 34px; height: 34px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; overflow: hidden;
+}
+.brand-mark img {
+  width: 100%; height: 100%; object-fit: contain;
 }
 .nav-links { display: flex; gap: 32px; font-size: 14px; }
 .nav-links a { color: var(--text-dim); }
