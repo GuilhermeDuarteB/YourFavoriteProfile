@@ -7,6 +7,8 @@ import RegisterView from '../views/RegisterView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import SearchView from '../views/SearchView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
+import Movies from '../views/Movies.vue'
+import Series from '../views/Series.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeView },
@@ -14,6 +16,8 @@ const routes = [
   { path: '/register', name: 'register', component: RegisterView, meta: { guestOnly: true } },
   { path: '/:username', name: 'profile', component: ProfileView},
   { path: '/search', name: 'search', component: SearchView },
+  { path: '/movies', name:'movies', component: Movies},
+  { path: '/series', name:'series', component: Series},
 
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },    
 ]

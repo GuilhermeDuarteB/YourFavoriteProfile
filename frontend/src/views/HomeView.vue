@@ -1,18 +1,23 @@
 <script setup>
-import {ref, onMounted, computed} from 'vue';
-import api from '../api/axios.js'
+import { ref, computed, onMounted } from 'vue';
+import api from '../api/axios.js';
 import NavBar from '../components/NavBar.vue';
 import TrendingGrid from '../components/TrendingGrid.vue';
 import HeroVisual from '../components/HeroSection.vue';
 import EpisodeBreakdown from '../components/EpisodeBreakdown.vue';
-import MediaCard from '../components/MediaCard.vue';
+import Footer from '../components/Footer.vue';
 
 const trending = ref([]);
+const latestEpisodes = ref([]);
 
 onMounted(async () => {
-  const res = await api.get('/media/trending');
-  trending.value = res.data;
-})
+  const [trendingRes, episodesRes] = await Promise.all([
+    api.get('/media/trending'),
+    api.get('/media/latest-episodes'),
+  ]);
+  trending.value = trendingRes.data;
+  latestEpisodes.value = episodesRes.data;
+});
 
 const heroPosters = computed(() =>
   trending.value.slice(0, 3).map((item) => ({
@@ -26,7 +31,6 @@ const heroPosters = computed(() =>
 <template>
   <div>
     <NavBar />
-
     <div class="hero">
       <div>
         <div class="eyebrow">Episode-by-episode ratings</div>
@@ -37,32 +41,14 @@ const heroPosters = computed(() =>
           <router-link to="/trending" class="btn btn-lg">Browse trending</router-link>
         </div>
       </div>
-        <HeroVisual
-        v-if="heroPosters.length"
-        :posters="heroPosters"
-        :score="8.7"
-        score-label="avg. from 12 episodes"
-      />
+      <HeroVisual v-if="heroPosters.length" :posters="heroPosters" :score="8.7" score-label="avg. from 12 episodes" />
     </div>
 
     <TrendingGrid :items="trending" />
 
-  <EpisodeBreakdown
-  :episodes="[
-    { code: 'S2E7', title: 'Static Bloom', show: 'The Last Signal', score: 9.1 },
-    { code: 'S1E4', title: 'Loose Ends', show: 'Paperweight', score: 7.8 },
-    { code: 'S2E6', title: 'The Long Wire', show: 'The Last Signal', score: 8.4 },
-    { code: 'S1E3', title: 'Quiet Hours', show: 'Paperweight', score: 8.9 },
-  ]"
-  breakdown-title="The Last Signal — season 2 breakdown"
-  :breakdown-bars="[
-    { label: 'E5', score: 7.4, percent: 74 },
-    { label: 'E6', score: 8.4, percent: 84 },
-    { label: 'E7', score: 9.1, percent: 91 },
-    { label: 'E8', score: 8.8, percent: 88 },
-  ]"
-  :average="8.4"
-/>
+    <EpisodeBreakdown v-if="latestEpisodes.length" :episodes="latestEpisodes" />
+
+     <Footer />
   </div>
 </template>
 
