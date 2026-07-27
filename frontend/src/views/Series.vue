@@ -1,15 +1,15 @@
 <script setup>
-import { ref } from 'vue';
-import api from '../api/axios.js';
-import NavBar from '../components/NavBar.vue';
-import Footer from '../components/Footer.vue';
-import { useAuthStore } from '../stores/authStore';
+import { ref } from "vue";
+import api from "../api/axios.js";
+import NavBar from "../components/NavBar.vue";
+import Footer from "../components/Footer.vue";
+import { useAuthStore } from "../stores/authStore";
 
 const authStore = useAuthStore();
-const selectedTypes = ref(['movie', 'series', 'game']);
-const selectedGenre = ref('all');
-const selectedDecade = ref('all');
-const sortBy = ref('popularity');
+const selectedTypes = ref(["movie", "series", "game"]);
+const selectedGenre = ref("all");
+const selectedDecade = ref("all");
+const sortBy = ref("popularity");
 const minRating = ref(0);
 const watchlistOnly = ref(false);
 
@@ -65,7 +65,14 @@ function toggleType(type) {
         <label class="filter-group">
           <span class="filter-label">Minimum rating</span>
           <div class="rating-row">
-            <input type="range" v-model="minRating" min="0" max="10" step="0.5" class="rating-slider" />
+            <input
+              type="range"
+              v-model="minRating"
+              min="0"
+              max="10"
+              step="0.5"
+              class="rating-slider"
+            />
             <span class="rating-value">{{ minRating }}+</span>
           </div>
         </label>
@@ -81,14 +88,16 @@ function toggleType(type) {
         </label>
 
         <template v-if="authStore.isAuthenticated">
-        <label class="filter-group filter-toggle">
-          <span class="filter-label">Only show my watchlist</span>
-          <input type="checkbox" v-model="watchlistOnly" class="toggle-checkbox" />
-        </label>
+          <label class="filter-group filter-toggle">
+            <span class="filter-label">Only show my watchlist</span>
+            <input
+              type="checkbox"
+              v-model="watchlistOnly"
+              class="toggle-checkbox"
+            />
+          </label>
         </template>
-        <template v-else>
-
-        </template>
+        <template v-else> </template>
       </section>
     </div>
 
