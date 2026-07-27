@@ -7,8 +7,7 @@ import RegisterView from "../views/RegisterView.vue";
 import ProfileView from "../views/ProfileView.vue";
 import SearchView from "../views/SearchView.vue";
 import NotFoundView from "../views/NotFoundView.vue";
-import Movies from "../views/Movies.vue";
-import Series from "../views/Series.vue";
+import Browse from "../views/BrowseView.vue";
 
 const routes = [
   { path: "/", name: "home", component: HomeView },
@@ -26,8 +25,10 @@ const routes = [
   },
   { path: "/:username", name: "profile", component: ProfileView },
   { path: "/search", name: "search", component: SearchView },
-  { path: "/movies", name: "movies", component: Movies },
-  { path: "/series", name: "series", component: Series },
+  {path: "/browse", name: "browse", component: Browse},
+  {path: "/movies", redirect: {path: '/browse', query: {types: 'movie'}}},
+  {path: "/series", redirect: {path: '/browse', query: {types: 'series'}}},
+  {path: "/games", redirect: {path: '/browse', query: {types: 'game'}}},
 
   { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundView },
 ];

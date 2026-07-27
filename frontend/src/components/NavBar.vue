@@ -14,6 +14,7 @@ const authStore = useAuthStore();
     </router-link>
 
     <div class="nav-links">
+      <router-link to="/browse">Browse</router-link>
       <router-link to="/movies">Movies</router-link>
       <router-link to="/series">Series</router-link>
       <router-link to="/games">Games</router-link>
@@ -42,7 +43,7 @@ nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 56px;
+  padding: 20px 5px;
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
