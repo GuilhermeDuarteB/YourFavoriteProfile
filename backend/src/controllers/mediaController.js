@@ -100,7 +100,7 @@ function formatGame(item) {
     title: item.name,
     type: 'game',
     meta: item.released ? item.released.slice(0, 4) : null,
-    score: item.rating ? Number(item.rating) : null,
+    score: item.rating ? Number((item.rating * 2).toFixed(1)) : null,
     posterUrl: item.background_image,
   };
 }
@@ -144,7 +144,7 @@ export async function getDiscover(req, res) {
       return res.json({
         page: 1,
         pageSize: results.length,
-        results,
+        results: sortResults(results, sortBy),
         hasMore: false,
       });
     }
@@ -183,5 +183,20 @@ export async function getDiscover(req, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error loading discover results' });
+  }
+}
+
+function sortResults(items, sortBy) {
+  const sorted = [...items];
+
+  switch (sortBy) {
+    case 'rating':
+      return sorted.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    case 'release_date':
+      return sorted.sort((a, b) => (b.meta || '').localeCompare(a.meta || ''));
+    case 'title':
+      return sorted.sort((a, b) => a.title.localeCompare(b.title));
+    default:
+      return sorted; 
   }
 }
