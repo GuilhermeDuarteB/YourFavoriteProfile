@@ -18,7 +18,9 @@ const authStore = useAuthStore();
       <router-link to="/movies">Movies</router-link>
       <router-link to="/series">Series</router-link>
       <router-link to="/games">Games</router-link>
+      <label v-if="authStore.isAuthenticated">
       <router-link to="/watchlist">Watchlist</router-link>
+        </label>
     </div>
     <div class="nav-right">
       <input class="search-pill" type="text" placeholder="Search titles, users..." />

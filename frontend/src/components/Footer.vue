@@ -1,5 +1,8 @@
 <script setup>
 const year = new Date().getFullYear();
+import { useAuthStore } from "../stores/authStore";
+
+const authStore = useAuthStore();
 </script>
 
 <template>
@@ -11,9 +14,7 @@ const year = new Date().getFullYear();
         </div>
         Your Favorite Profile
       </router-link>
-      <p class="tagline">
-        Rate every episode. Get the real series score.
-      </p>
+      <p class="tagline">Rate every episode. Get the real series score.</p>
     </div>
 
     <div class="footer-columns">
@@ -28,12 +29,16 @@ const year = new Date().getFullYear();
         <h4>Account</h4>
         <router-link to="/register">Register</router-link>
         <router-link to="/login">Log in</router-link>
-        <router-link to="/watchlist">Watchlist</router-link>
+          <router-link v-if="authStore.isAuthenticated" to="/watchlist">Watchlist</router-link>
       </div>
 
       <div class="footer-col">
         <h4>Project</h4>
-        <a href="https://github.com/GuilhermeDuarteB/YourFavoriteProfile" target="_blank" rel="noopener">
+        <a
+          href="https://github.com/GuilhermeDuarteB/YourFavoriteProfile"
+          target="_blank"
+          rel="noopener"
+        >
           GitHub Repo
         </a>
         <a href="https://guilhermebranco.dev" target="_blank" rel="noopener">
@@ -44,7 +49,9 @@ const year = new Date().getFullYear();
 
     <div class="footer-bottom">
       <span>&copy; {{ year }} Your Favorite Profile. All rights reserved.</span>
-      <span class="footer-note">Personal portfolio project — powered by TMDB &amp; RAWG</span>
+      <span class="footer-note"
+        >Personal portfolio project — powered by TMDB &amp; RAWG</span
+      >
     </div>
   </footer>
 </template>
@@ -102,6 +109,12 @@ footer {
 }
 
 .footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+label {
   display: flex;
   flex-direction: column;
   gap: 10px;
