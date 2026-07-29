@@ -20,6 +20,7 @@ const authStore = useAuthStore();
     <div class="footer-columns">
       <div class="footer-col">
         <h4>Explore</h4>
+        <router-link to="/browse">Browse</router-link>
         <router-link to="/movies">Movies</router-link>
         <router-link to="/series">Series</router-link>
         <router-link to="/games">Games</router-link>
@@ -29,7 +30,9 @@ const authStore = useAuthStore();
         <h4>Account</h4>
         <router-link to="/register">Register</router-link>
         <router-link to="/login">Log in</router-link>
-          <router-link v-if="authStore.isAuthenticated" to="/watchlist">Watchlist</router-link>
+        <router-link v-if="authStore.isAuthenticated" to="/watchlist"
+          >Watchlist</router-link
+        >
       </div>
 
       <div class="footer-col">
@@ -43,6 +46,12 @@ const authStore = useAuthStore();
         </a>
         <a href="https://guilhermebranco.dev" target="_blank" rel="noopener">
           Developer Portfolio
+        </a>
+        <a
+          href="https://www.linkedin.com/in/guilhermbranco"
+          target="_blacnk"
+          rel="noopener"
+          >Linkedin
         </a>
       </div>
     </div>

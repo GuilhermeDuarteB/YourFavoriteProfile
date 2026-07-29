@@ -1,15 +1,17 @@
 <script setup>
 defineProps({
+  id: Number,
   title: String,
   type: String, // 'movie' | 'series' | 'game'
   meta: String, // ex: "2024" ou "S2 · 8 ep"
   score: Number,
   posterUrl: String,
+  developer: String,
 });
 </script>
 
 <template>
-  <router-link :to="`/${type}/${title}`" class="card">
+  <router-link :to="`/${type}/${id}`" class="card">
     <div
       class="card-poster"
       :style="posterUrl ? { backgroundImage: `url(${posterUrl})` } : {}"
@@ -18,6 +20,7 @@ defineProps({
     </div>
     <div class="card-body">
       <div class="card-title">{{ title }}</div>
+      <div class="card-developer" v-if="developer">{{ developer }}</div>
       <div class="card-meta">
         <span>{{ meta }}</span>
         <span class="card-score" v-if="score">★ {{ score }}</span>
@@ -62,6 +65,14 @@ defineProps({
   font-size: 13px;
   font-weight: 700;
   margin-bottom: 4px;
+}
+.card-developer {
+  font-size: 11px;
+  color: var(--text-mute);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .card-meta {
   font-size: 11px;

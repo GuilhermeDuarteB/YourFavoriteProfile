@@ -8,6 +8,7 @@ import ProfileView from "../views/ProfileView.vue";
 import SearchView from "../views/SearchView.vue";
 import NotFoundView from "../views/NotFoundView.vue";
 import Browse from "../views/BrowseView.vue";
+import MediaDetailsView from "../views/MediaDetailsView.vue";
 
 const routes = [
   { path: "/", name: "home", component: HomeView },
@@ -23,12 +24,20 @@ const routes = [
     component: RegisterView,
     meta: { guestOnly: true },
   },
-  { path: "/:username", name: "profile", component: ProfileView },
   { path: "/search", name: "search", component: SearchView },
-  {path: "/browse", name: "browse", component: Browse},
-  {path: "/movies", redirect: {path: '/browse', query: {types: 'movie'}}},
-  {path: "/series", redirect: {path: '/browse', query: {types: 'series'}}},
-  {path: "/games", redirect: {path: '/browse', query: {types: 'game'}}},
+  { path: "/browse", name: "browse", component: Browse },
+  { path: "/movies", redirect: { path: "/browse", query: { types: "movie" } } },
+  {
+    path: "/series",
+    redirect: { path: "/browse", query: { types: "series" } },
+  },
+  { path: "/games", redirect: { path: "/browse", query: { types: "game" } } },
+
+  { path: "/movie/:id", name: "movie-detail", component: MediaDetailsView },
+  { path: "/series/:id", name: "series-detail", component: MediaDetailsView },
+  { path: "/game/:id", name: "game-detail", component: MediaDetailsView },
+
+  { path: "/:username", name: "profile", component: ProfileView },
 
   { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundView },
 ];
@@ -38,17 +47,16 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
   const authStore = useAuthStore();
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next({ name: "login" });
+    return { name: "login" };
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated) {
-    return next({ name: "home" });
+    return { name: "home" };
   }
-
-  next();
 });
+
 export default router;

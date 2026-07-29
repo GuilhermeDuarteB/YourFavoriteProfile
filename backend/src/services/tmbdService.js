@@ -134,3 +134,21 @@ export async function searchSeries(query) {
   const res = await tmdb.get('/search/tv', { params: { query } });
   return res.data.results;
 }
+
+export async function getMovieDetails(id) {
+  const [detailsRes, creditsRes] = await Promise.all([
+    tmdb.get(`/movie/${id}`),
+    tmdb.get(`/movie/${id}/credits`),
+  ]);
+
+  return {... detailsRes.data, cast: creditsRes.data.cast?.slice(0,8) || []};
+}
+
+export async function getSeriesDetails(id) {
+  const [detailsRes, creditsRes] = await Promise.all([
+    tmdb.get(`/tv/${id}`),
+    tmdb.get(`/tv/${id}/credits`),
+  ]);
+
+  return {... detailsRes.data, cast: creditsRes.data.cast?.slice(0,8) || []};
+}
