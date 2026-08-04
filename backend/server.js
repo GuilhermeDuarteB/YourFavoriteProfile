@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import * as Sentry from '@sentry/node';
 import app from './src/app.js';
 import { pools } from './src/config/db.js';
 
