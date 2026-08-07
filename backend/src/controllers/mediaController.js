@@ -21,7 +21,7 @@ import { findOrCreateMedia } from "../models/mediaModel.js";
 function formatMovie(item) {
   return {
     id: item.id,
-    source: 'tmdb',
+    source: "tmdb",
     title: item.title,
     type: "Movie",
     meta: (item.release_date || "").slice(0, 4),
@@ -35,7 +35,7 @@ function formatMovie(item) {
 function formatSeries(item) {
   return {
     id: item.id,
-    source: 'tmdb',
+    source: "tmdb",
     title: item.name,
     type: "series",
     meta: (item.first_air_date || "").slice(0, 4),
@@ -49,7 +49,7 @@ function formatSeries(item) {
 function formatGame(item) {
   return {
     id: item.id,
-    source: 'rawg',
+    source: "rawg",
     title: item.name,
     type: "game",
     meta: item.released ? item.released.slice(0, 4) : null,
@@ -62,23 +62,36 @@ function formatGame(item) {
 //trending
 export async function getTrending(req, res) {
   try {
-    const [tmdbResults, rawgResults] = await Promise.all([
+    const [tmdb, rawg] = await Promise.allSettled([
       getTrendingTmdb(),
       getTrendingRawg(),
     ]);
+
+    const tmdbResults = tmdb.status === "fulfilled" ? tmdb.value : [];
+    const rawgResults = rawg.status === "fulfilled" ? rawg.value : [];
+
+    if (tmdb.status === "rejected")
+      console.error("TMDB trending failed:", tmdb.reason.message);
+    if (rawg.status === "rejected")
+      console.error("RAWG trending failed:", rawg.reason.message);
 
     const movies = tmdbResults
       .filter((item) => item.media_type === "movie" || item.media_type === "tv")
       .slice(0, 4)
       .map((item) =>
-        item.media_type === "tv" ? formatSeries(item) : formatMovie(item)
+        item.media_type === "tv" ? formatSeries(item) : formatMovie(item),
       );
 
-    const topGames = rawgResults.slice(0, 2);
-    const gameDetails = await Promise.all(
-      topGames.map((game) => getGameDetails(game.id))
-    );
-    const games = gameDetails.map(formatGame);
+    let games = [];
+    if (rawgResults.length > 0) {
+      const topGames = rawgResults.slice(0, 2);
+      const gameDetailsResults = await Promise.allSettled(
+        topGames.map((game) => getGameDetails(game.id)),
+      );
+      games = gameDetailsResults
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => formatGame(r.value));
+    }
 
     res.json([...movies, ...games]);
   } catch (err) {
@@ -158,21 +171,34 @@ export async function getDiscover(req, res) {
     //search
     if (searchQuery) {
       if (selectedTypes.includes("movie")) {
-        const raw = await searchMovie(searchQuery);
-
-        results.push(...raw.map(formatMovie));
+        try {
+          const raw = await searchMovie(searchQuery);
+          results.push(...raw.map(formatMovie));
+        } catch (err) {
+          console.error("TMDB discover failed:", err.message);
+        }
       }
 
       if (selectedTypes.includes("series")) {
-        const raw = await searchSeries(searchQuery);
-
-        results.push(...raw.map(formatSeries));
+        try {
+          const raw = await searchSeries(searchQuery);
+          results.push(...raw.map(formatSeries));
+        } catch (err) {
+          console.error("TMDB discover failed:", err.message);
+        }
       }
 
       if (selectedTypes.includes("game")) {
-        const raw = await searchRawg(searchQuery);
-
-        results.push(...raw.map(formatGame));
+        try {
+          const raw = await discoverGames({
+            ...filters,
+            page: pageNum,
+            pageSize: perType,
+          });
+          results.push(...raw.map(formatGame));
+        } catch (err) {
+          console.error("RAWG discover failed:", err.message);
+        }
       }
 
       return res.json({
@@ -273,47 +299,67 @@ function sortResults(items, sortBy) {
 //media deatils
 
 export async function getMediaDetails(req, res) {
-  try{
-    const {type, id} = req.params;
+  try {
+    const { type, id } = req.params;
 
     let detail;
-    if(type === 'movie'){
+    if (type === "movie") {
       const raw = await getMovieDetails(id);
       detail = {
         externalId: String(raw.id),
-        source: 'tmdb',
-        type: 'movie',
+        source: "tmdb",
+        type: "movie",
         title: raw.title,
         overview: raw.overview,
-        posterUrl: raw.poster_path ? `https://image.tmdb.org/t/p/w500${raw.poster_path}` : null,
+        posterUrl: raw.poster_path
+          ? `https://image.tmdb.org/t/p/w500${raw.poster_path}`
+          : null,
         releaseDate: raw.release_date,
         score: raw.vote_average ? Number(raw.vote_average.toFixed(1)) : null,
         genres: raw.genres?.map((g) => g.name) || [],
-        cast: raw.cast.map((c) => ({ name: c.name, character: c.character, photoUrl: c.profile_path ? `https://image.tmdb.org/t/p/w200${c.profile_path}` : null })),
+        cast: raw.cast.map((c) => ({
+          name: c.name,
+          character: c.character,
+          photoUrl: c.profile_path
+            ? `https://image.tmdb.org/t/p/w200${c.profile_path}`
+            : null,
+        })),
       };
-    }else if (type === 'series'){
+    } else if (type === "series") {
       const raw = await getSeriesDetails(id);
       detail = {
         externalId: String(raw.id),
-        source: 'tmdb',
-        type: 'series',
+        source: "tmdb",
+        type: "series",
         title: raw.name,
         overview: raw.overview,
-        posterUrl: raw.poster_path ? `https://image.tmdb.org/t/p/w500${raw.poster_path}` : null,
+        posterUrl: raw.poster_path
+          ? `https://image.tmdb.org/t/p/w500${raw.poster_path}`
+          : null,
         releaseDate: raw.first_air_date,
         score: raw.vote_average ? Number(raw.vote_average.toFixed(1)) : null,
         genres: raw.genres?.map((g) => g.name) || [],
-        cast: raw.cast.map((c) => ({ name: c.name, character: c.character, photoUrl: c.profile_path ? `https://image.tmdb.org/t/p/w200${c.profile_path}` : null })),
+        cast: raw.cast.map((c) => ({
+          name: c.name,
+          character: c.character,
+          photoUrl: c.profile_path
+            ? `https://image.tmdb.org/t/p/w200${c.profile_path}`
+            : null,
+        })),
         seasons: (raw.seasons || [])
           .filter((s) => s.season_number > 0)
-          .map((s) => ({ seasonNumber: s.season_number, name: s.name, episodeCount: s.episode_count })),
+          .map((s) => ({
+            seasonNumber: s.season_number,
+            name: s.name,
+            episodeCount: s.episode_count,
+          })),
       };
-    }else if (type === 'game'){
+    } else if (type === "game") {
       const raw = await getGameDetails(id);
       detail = {
         externalId: String(raw.id),
-        source: 'rawg',
-        type: 'game',
+        source: "rawg",
+        type: "game",
         title: raw.name,
         overview: raw.description_raw,
         posterUrl: raw.background_image,
@@ -323,8 +369,8 @@ export async function getMediaDetails(req, res) {
         developer: raw.developers?.[0]?.name || null,
         platforms: raw.platforms?.map((p) => p.platform.name) || [],
       };
-    }else{
-      return res.status(400).json({error: 'Invalid media type'});
+    } else {
+      return res.status(400).json({ error: "Invalid media type" });
     }
 
     const media = await findOrCreateMedia({
@@ -336,9 +382,9 @@ export async function getMediaDetails(req, res) {
       releaseDate: detail.releaseDate || null,
     });
 
-    res.json({...detail, mediaId: media.id});
-  }catch(err){
+    res.json({ ...detail, mediaId: media.id });
+  } catch (err) {
     console.error(err);
-    res.status(500).json({error: 'Error loadind media details'});
+    res.status(500).json({ error: "Error loadind media details" });
   }
 }

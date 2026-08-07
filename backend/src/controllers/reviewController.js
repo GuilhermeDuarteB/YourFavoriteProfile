@@ -5,12 +5,13 @@ import {
   findReviewById,
   deleteReview,
   updateReview,
+  findExistingReview,
 } from "../models/reviewModel.js";
 
 export async function postReview(req, res) {
   try {
     const { mediaId, episodeId, score, comment } = req.body;
-    const userId = req.userId; //authMiddleware
+    const userId = req.userId;
 
     if (!mediaId && !episodeId) {
       return res
@@ -22,8 +23,25 @@ export async function postReview(req, res) {
         .status(400)
         .json({ error: "Provide either mediaId or episodeId, not both" });
     }
-    if (score === undefined || score < 0 || score > 10) {
-      return res.status(400).json({ error: "Score must be between 0 and 10" });
+    if (
+      score === undefined ||
+      typeof score !== "number" ||
+      score < 0 ||
+      score > 10
+    ) {
+      return res
+        .status(400)
+        .json({ error: "Score must be a number between 0 and 10" });
+    }
+
+    const existing = await findExistingReview({ userId, mediaId, episodeId });
+    if (existing) {
+      return res
+        .status(409)
+        .json({
+          error:
+            "You already reviewed this — edit your existing review instead.",
+        });
     }
 
     const review = await createReview({

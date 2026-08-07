@@ -82,6 +82,16 @@ CREATE TABLE top_five (
     UNIQUE(user_id, media_id)
 );
 
+-- social features
+CREATE TABLE follows (
+    id SERIAL PRIMARY KEY,
+    follower_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    following_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(follower_id, following_id),
+    CHECK (follower_id != following_id) 
+);
+
 -- =========================================
 -- View: calc series note with the episodes note
 -- =========================================
@@ -119,3 +129,5 @@ CREATE INDEX idx_watchlist_user ON watchlist(user_id);
 CREATE INDEX idx_episodes_season ON episodes(season_id);
 CREATE INDEX idx_seasons_media ON seasons(media_id);
 CREATE INDEX idx_top_five_user ON top_five(user_id);
+CREATE INDEX idx_follows_follower ON follows(follower_id);
+CREATE INDEX idx_follows_following ON follows(following_id);

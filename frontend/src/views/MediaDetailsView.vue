@@ -1,34 +1,64 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import api from '../api/axios.js';
-import NavBar from '../components/NavBar.vue';
-import Footer from '../components/Footer.vue';
+import { ref, watch, onMounted, computed } from "vue";
+import { useRoute } from "vue-router";
+import api from "../api/axios.js";
+import NavBar from "../components/NavBar.vue";
+import Footer from "../components/Footer.vue";
+import { useAuthStore } from "../stores/authStore";
+import ReviewForm from "../components/ReviewForm.vue";
+import ReviewList from "../components/ReviewList.vue";
+import Modal from "../components/Modal.vue";
 
+const authStore = useAuthStore();
+const reviews = ref([]);
+const showForm = ref(false);
 const route = useRoute();
 const detail = ref(null);
 const loading = ref(true);
-const error = ref('');
+const error = ref("");
 
-// O :type vem do nome da rota (movie-detail, series-detail, game-detail)
+const myReview = computed(
+  () => reviews.value.find((r) => r.user_id === authStore.user?.id) || null,
+);
+
 function getTypeFromRoute() {
-  if (route.name === 'movie-detail') return 'movie';
-  if (route.name === 'series-detail') return 'series';
-  if (route.name === 'game-detail') return 'game';
+  if (route.name === "movie-detail") return "movie";
+  if (route.name === "series-detail") return "series";
+  if (route.name === "game-detail") return "game";
   return null;
 }
 
 async function loadDetail() {
   loading.value = true;
-  error.value = '';
+  error.value = "";
   try {
     const type = getTypeFromRoute();
     const res = await api.get(`/media/${type}/${route.params.id}`);
     detail.value = res.data;
+    await loadReviews();
   } catch (err) {
-    error.value = 'Could not load this title.';
+    error.value = "Could not load this title.";
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadReviews() {
+  if (!detail.value?.mediaId) return;
+  try {
+    const res = await api.get(`/reviews/media/${detail.value.mediaId}`);
+    reviews.value = res.data;
+  } catch (err) {
+    console.error("Error loading reviews:", err);
+  }
+}
+
+async function onReviewSaved() {
+  showForm.value = false;
+  try {
+    await loadReviews();
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -43,22 +73,56 @@ watch(() => route.params.id, loadDetail, { immediate: true });
     <div v-else-if="error" class="state-message">{{ error }}</div>
 
     <div v-else-if="detail" class="detail">
-      <div class="detail-hero" :style="detail.posterUrl ? { backgroundImage: `url(${detail.posterUrl})` } : {}">
+      <div
+        class="detail-hero"
+        :style="
+          detail.posterUrl
+            ? { backgroundImage: `url(${detail.posterUrl})` }
+            : {}
+        "
+      >
         <div class="detail-overlay">
-          <div class="detail-poster" :style="detail.posterUrl ? { backgroundImage: `url(${detail.posterUrl})` } : {}"></div>
+          <div
+            class="detail-poster"
+            :style="
+              detail.posterUrl
+                ? { backgroundImage: `url(${detail.posterUrl})` }
+                : {}
+            "
+          ></div>
           <div class="detail-info">
             <span class="detail-type">{{ detail.type }}</span>
             <h1>{{ detail.title }}</h1>
             <div class="detail-meta">
-              <span v-if="detail.releaseDate">{{ detail.releaseDate.slice(0, 4) }}</span>
+              <span v-if="detail.releaseDate">{{
+                detail.releaseDate.slice(0, 4)
+              }}</span>
               <span v-if="detail.developer">· {{ detail.developer }}</span>
-              <span v-if="detail.score" class="detail-score">★ {{ detail.score }}</span>
+              <span v-if="detail.score" class="detail-score"
+                >★ {{ detail.score }}</span
+              >
             </div>
             <div class="detail-genres" v-if="detail.genres?.length">
-              <span v-for="g in detail.genres" :key="g" class="genre-pill">{{ g }}</span>
+              <span v-for="g in detail.genres" :key="g" class="genre-pill">{{
+                g
+              }}</span>
             </div>
             <div class="detail-actions">
-              <button class="btn btn-primary">Write a review</button>
+              <button
+                v-if="authStore.isAuthenticated && !showForm"
+                class="btn btn-primary"
+                @click="showForm = true"
+              >
+                {{ myReview ? "Edit your review" : "Write a review" }}
+              </button>
+              <button
+                v-else-if="!authStore.isAuthenticated"
+                class="btn btn-primary"
+                disabled
+                title="Log in to review"
+              >
+                Log in to review
+              </button>
               <button class="btn">Add to watchlist</button>
             </div>
           </div>
@@ -68,14 +132,32 @@ watch(() => route.params.id, loadDetail, { immediate: true });
       <div class="detail-body">
         <section>
           <h3>Overview</h3>
-          <p>{{ detail.overview || 'No description available.' }}</p>
+          <p>{{ detail.overview || "No description available." }}</p>
+        </section>
+
+        <section>
+          <h3>Reviews</h3>
+          <Modal v-if="showForm" @close="showForm = false">
+            <ReviewForm
+              :media-id="detail.mediaId"
+              :existing-review="myReview"
+              @saved="onReviewSaved"
+              @cancel="showForm = false"
+            />
+          </Modal>
+          <ReviewList :reviews="reviews" />
         </section>
 
         <section v-if="detail.cast?.length">
           <h3>Cast</h3>
           <div class="cast-grid">
             <div v-for="c in detail.cast" :key="c.name" class="cast-card">
-              <div class="cast-photo" :style="c.photoUrl ? { backgroundImage: `url(${c.photoUrl})` } : {}"></div>
+              <div
+                class="cast-photo"
+                :style="
+                  c.photoUrl ? { backgroundImage: `url(${c.photoUrl})` } : {}
+                "
+              ></div>
               <div class="cast-name">{{ c.name }}</div>
               <div class="cast-character">{{ c.character }}</div>
             </div>
@@ -85,7 +167,11 @@ watch(() => route.params.id, loadDetail, { immediate: true });
         <section v-if="detail.seasons?.length">
           <h3>Seasons</h3>
           <div class="season-list">
-            <div v-for="s in detail.seasons" :key="s.seasonNumber" class="season-row">
+            <div
+              v-for="s in detail.seasons"
+              :key="s.seasonNumber"
+              class="season-row"
+            >
               <span>{{ s.name }}</span>
               <span class="season-count">{{ s.episodeCount }} episodes</span>
             </div>
@@ -95,7 +181,9 @@ watch(() => route.params.id, loadDetail, { immediate: true });
         <section v-if="detail.platforms?.length">
           <h3>Platforms</h3>
           <div class="detail-genres">
-            <span v-for="p in detail.platforms" :key="p" class="genre-pill">{{ p }}</span>
+            <span v-for="p in detail.platforms" :key="p" class="genre-pill">{{
+              p
+            }}</span>
           </div>
         </section>
       </div>
@@ -120,7 +208,11 @@ watch(() => route.params.id, loadDetail, { immediate: true });
 }
 
 .detail-overlay {
-  background: linear-gradient(to bottom, rgba(11,13,18,0.85), rgba(11,13,18,0.97) 80%);
+  background: linear-gradient(
+    to bottom,
+    rgba(11, 13, 18, 0.85),
+    rgba(11, 13, 18, 0.97) 80%
+  );
   padding: 56px;
   display: flex;
   gap: 32px;
@@ -135,7 +227,7 @@ watch(() => route.params.id, loadDetail, { immediate: true });
   background-position: center;
   background-color: var(--bg-card);
   flex-shrink: 0;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
 .detail-info h1 {
@@ -276,6 +368,7 @@ watch(() => route.params.id, loadDetail, { immediate: true });
     text-align: center;
     padding: 32px 24px;
   }
+
   .detail-body {
     padding: 24px;
   }

@@ -79,3 +79,27 @@ export async function getSeriesMedia(mediaId) {
   );
   return result.rows[0]?.series_score || null;
 }
+
+//reviews by user
+
+export async function getReviewsByUser(userId, limit = 6) {
+  const result = await pools.query(
+    `SELECT r.id, r.score, r.comment, r.created_at, m.title, m.poster_url, m.type FROM reviews r
+    JOIN media m ON m.id = r.media_id
+    WHERE r.user_id = $1
+    ORDER BY r.created_at DESC
+    LIMIT $2`,
+    [userId, limit],
+  );
+  return result.rows;
+}
+
+//existent review
+
+export async function findExistingReview({ userId, mediaId, episodeId }) {
+  const result = await pools.query(
+    `SELECT * FROM reviews WHERE user_id = $1 AND media_id IS NOT DISTINCT FROM $2 AND episode_id IS NOT DISTINCT FROM $3`,
+    [userId, mediaId || null, episodeId || null],
+  );
+  return result.rows[0];
+}
