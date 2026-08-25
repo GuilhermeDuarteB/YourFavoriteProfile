@@ -9,6 +9,7 @@ import SearchView from "../views/SearchView.vue";
 import NotFoundView from "../views/NotFoundView.vue";
 import Browse from "../views/BrowseView.vue";
 import MediaDetailsView from "../views/MediaDetailsView.vue";
+import SettingsView from "../views/SettingsView.vue";
 
 const routes = [
   { path: "/", name: "home", component: HomeView },
@@ -37,6 +38,7 @@ const routes = [
   { path: "/series/:id", name: "series-detail", component: MediaDetailsView },
   { path: "/game/:id", name: "game-detail", component: MediaDetailsView },
 
+  { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
   { path: "/:username", name: "profile", component: ProfileView },
 
   { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundView },

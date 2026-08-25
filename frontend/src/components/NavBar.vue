@@ -1,5 +1,5 @@
 <script setup>
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from "../stores/authStore";
 
 const authStore = useAuthStore();
 </script>
@@ -19,22 +19,34 @@ const authStore = useAuthStore();
       <router-link to="/series">Series</router-link>
       <router-link to="/games">Games</router-link>
       <label v-if="authStore.isAuthenticated">
-      <router-link to="/watchlist">Watchlist</router-link>
-        </label>
+        <router-link to="/watchlist">Watchlist</router-link>
+      </label>
+      <label v-if="authStore.isAuthenticated">
+        <router-link to="/settings" class="settings-link">⚙</router-link>
+      </label>
     </div>
     <div class="nav-right">
-      <input class="search-pill" type="text" placeholder="Search titles, users..." />
+      <input
+        class="search-pill"
+        type="text"
+        placeholder="Search titles, users..."
+      />
       <template v-if="authStore.isAuthenticated">
         <router-link
           class="btn btn-primary"
-          :to="{ name: 'profile', params: { username: authStore.user.username } }"
+          :to="{
+            name: 'profile',
+            params: { username: authStore.user.username },
+          }"
         >
           {{ authStore.user.username }}
         </router-link>
       </template>
       <template v-else>
         <router-link class="btn" to="/login">Log in</router-link>
-        <router-link class="btn btn-primary" to="/register">Sign up</router-link>
+        <router-link class="btn btn-primary" to="/register"
+          >Sign up</router-link
+        >
       </template>
     </div>
   </nav>
@@ -49,7 +61,7 @@ nav {
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
-  background: rgba(11,13,18,0.9);
+  background: rgba(11, 13, 18, 0.9);
   backdrop-filter: blur(8px);
   z-index: 10;
 }
@@ -79,22 +91,26 @@ nav {
 .nav-links {
   display: flex;
   gap: 32px;
-  font-size: 14px; }
+  font-size: 14px;
+}
 
 .nav-links a {
-  color: var(--text-dim); }
+  color: var(--text-dim);
+}
 
-.nav-links a:hover { 
-  color: var(--text); }
+.nav-links a:hover {
+  color: var(--text);
+}
 
 .nav-right {
   display: flex;
-  align-items: center; 
-  gap: 18px; }
+  align-items: center;
+  gap: 18px;
+}
 
 .search-pill {
   background: var(--bg-card);
-  border: 1px solid var(--border); 
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 9px 16px;
   font-size: 13px;
@@ -114,5 +130,6 @@ nav {
 .btn-primary {
   background: var(--blue);
   border-color: var(--blue);
-  color: #fff; }
+  color: #fff;
+}
 </style>

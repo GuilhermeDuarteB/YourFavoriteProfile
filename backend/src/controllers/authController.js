@@ -1,10 +1,12 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import {
+import {findUserById,
+  updateUserEmail,
+  deleteUser,
   createUser,
   findUserByEmail,
   findUserByUsername,
-} from "../models/userModel.js";
+} from "../models/userModel.js"; 
 
 const SALT_ROUNDS = 10;
 
@@ -76,3 +78,43 @@ export async function login(req, res) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+
+
+export async function updateEmail(req, res) {
+  try {
+    const {newEmail, password} = req.body;
+    if (!newEmail || !password) {
+      return res.status(400).json({message: "New email and password are required"});
+    }
+
+    const user = await findUserById(req.userId, true);
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) return res.status(401).json({message: "Incorrect password"});
+
+    const existing = await findUserByEmail(newEmail);
+    if (existing) return res.status(409).json({message: "Email already in use"});
+
+    const updated = await updateUserEmail(req.userId, newEmail);
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({message: "Error updating email"});
+  }}
+
+export async function deleteAccount(req, res) {
+  try {
+    const {password} = req.body;
+    if (!password) {
+      return res.status(400).json({message: "Password is required"});
+    }
+
+    const user = await findUserById(req.userId, true);
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) return res.status(401).json({message: "Incorrect password"});
+
+    await deleteUser(req.userId);
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({message: "Error deleting account"});
+  }}

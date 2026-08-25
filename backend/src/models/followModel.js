@@ -26,7 +26,7 @@ export async function isFollowing(followerId, followingId) {
 }
 
 export async function getFollowCounts(userId) {
-  const result = await pool.query(
+  const result = await pools.query(
     `SELECT
        (SELECT COUNT(*) FROM follows WHERE following_id = $1) AS followers,
        (SELECT COUNT(*) FROM follows WHERE follower_id = $1) AS following`,

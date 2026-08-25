@@ -19,9 +19,13 @@ export async function findUserByEmail(email) {
 }
 
 //find user ID func
-export async function findUserById(id) {
+export async function findUserById(id, withPassword = false) {
+  const columns = withPassword
+    ? "id, username, email, password_hash, bio, avatar_url, created_at"
+    : "id, username, bio, email, avatar_url, created_at";
+
   const result = await pools.query(
-    "SELECT id, username, bio, email, avatar_url, created_at from users WHERE id = $1",
+    `SELECT ${columns} FROM users WHERE id = $1`,
     [id],
   );
   return result.rows[0];
@@ -67,4 +71,20 @@ export async function updateUserProfile(userId, { bio, avatarUrl }) {
     [bio, avatarUrl, userId],
   );
   return result.rows[0];
+}
+
+//update user email
+
+export async function updateUserEmail(userId, newEmail) {
+  const result = await pools.query(
+    `UPDATE users SET email = $1 WHERE id = $2 
+    RETURNING id, username,email`[(newEmail, userId)],
+  );
+  return result.rows[0];
+}
+
+//delete user
+
+export async function deleteUser(id) {
+  await pool.query(`DELETE FROM users WHERE id = $1`, [id]);
 }
