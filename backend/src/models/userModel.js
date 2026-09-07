@@ -77,14 +77,26 @@ export async function updateUserProfile(userId, { bio, avatarUrl }) {
 
 export async function updateUserEmail(userId, newEmail) {
   const result = await pools.query(
-    `UPDATE users SET email = $1 WHERE id = $2 
-    RETURNING id, username,email`[(newEmail, userId)],
+    `UPDATE users SET email = $1 WHERE id = $2 RETURNING id, username, email`,
+    [newEmail, userId]
   );
   return result.rows[0];
 }
 
+
 //delete user
 
 export async function deleteUser(id) {
-  await pool.query(`DELETE FROM users WHERE id = $1`, [id]);
+  await pools.query(`DELETE FROM users WHERE id = $1`, [id]);
+}
+
+
+//update username
+
+export async function updateUsername(userId, newUsername) {
+  const result = await pools.query(
+    `UPDATE users SET username = $1 WHERE id = $2 RETURNING id, username, email`,
+    [newUsername, userId]
+  );
+  return result.rows[0];
 }

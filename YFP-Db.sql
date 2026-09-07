@@ -22,6 +22,7 @@ CREATE TABLE media (
     title VARCHAR(255) NOT NULL,
     poster_url VARCHAR(500),
     release_date DATE,
+    genres TEXT[],                          -- Genres
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(external_id, source)
 );

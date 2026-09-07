@@ -4,23 +4,23 @@ import {
   getUserStats,
   updateUserProfile,
 } from "../models/userModel.js";
-import { getReviewsByUser } from "../models/reviewModel.js";
-import { getFollowCounts, isFollowing } from '../models/followModel.js';
+import { getReviewsByUser, getGenreBreakdown } from "../models/reviewModel.js";
+import { getFollowCounts, isFollowing } from "../models/followModel.js";
 
 export async function getPublicProfile(req, res) {
   try {
     const user = await findUserByUsername(req.params.username);
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     const followCounts = await getFollowCounts(user.id);
-    const viewerFollows = req.userId ? await isFollowing(req.userId, user.id) : false;
+    const viewerFollows = req.userId
+      ? await isFollowing(req.userId, user.id)
+      : false;
 
-    const [stats, recentReviews] = await Promise.all([
+    const [stats, recentReviews, genreBreakdown] = await Promise.all([
       getUserStats(user.id),
       getReviewsByUser(user.id),
+      getGenreBreakdown(user.id),
     ]);
 
     res.json({
@@ -30,6 +30,7 @@ export async function getPublicProfile(req, res) {
       createdAt: user.created_at,
       stats,
       recentReviews,
+      genreBreakdown,
       topFive: [],
       followCounts,
       viewerFollows,

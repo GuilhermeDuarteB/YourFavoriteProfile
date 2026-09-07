@@ -380,6 +380,7 @@ export async function getMediaDetails(req, res) {
       title: detail.title,
       posterUrl: detail.posterUrl,
       releaseDate: detail.releaseDate || null,
+      genres: detail.genres,
     });
 
     res.json({ ...detail, mediaId: media.id });

@@ -6,6 +6,7 @@ import api from "../api/axios.js";
 import NavBar from "../components/NavBar.vue";
 import Footer from "../components/Footer.vue";
 import FollowButton from "../components/FollowButton.vue";
+import GenreRadar from "../components/GenreRadar.vue";
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -13,9 +14,6 @@ const authStore = useAuthStore();
 const profile = ref(null);
 const loading = ref(true);
 const error = ref("");
-const editing = ref(false);
-const editBio = ref("");
-const saving = ref(false);
 
 const isOwnProfile = computed(
   () => authStore.user?.username === route.params.username,
@@ -27,28 +25,11 @@ async function loadProfile() {
   try {
     const res = await api.get(`/users/${route.params.username}`);
     profile.value = res.data;
-    editBio.value = res.data.bio || "";
   } catch (err) {
     error.value =
       err.response?.status === 404 ? "User not found" : "Error loading profile";
   } finally {
     loading.value = false;
-  }
-}
-
-async function saveBio() {
-  saving.value = true;
-  try {
-    await api.put("/users/me", {
-      bio: editBio.value,
-      avatarUrl: profile.value.avatarUrl,
-    });
-    profile.value.bio = editBio.value;
-    editing.value = false;
-  } catch (err) {
-    console.error(err);
-  } finally {
-    saving.value = false;
   }
 }
 
@@ -64,7 +45,7 @@ watch(() => route.params.username, loadProfile, { immediate: true });
 </script>
 
 <template>
-  <div>
+  <div class="page">
     <NavBar />
 
     <div v-if="loading" class="state-message">Loading...</div>
@@ -72,23 +53,46 @@ watch(() => route.params.username, loadProfile, { immediate: true });
 
     <div v-else-if="profile" class="profile">
       <div class="hero">
-        <div
-          class="avatar"
-          :style="
-            profile.avatarUrl
-              ? { backgroundImage: `url(${profile.avatarUrl})` }
-              : {}
-          "
-        >
-          <span v-if="!profile.avatarUrl">{{
-            profile.username[0].toUpperCase()
-          }}</span>
-        </div>
-        <div class="hero-info">
-          <h1>{{ profile.username }}</h1>
-          <p class="joined">Member since {{ formatDate(profile.createdAt) }}</p>
-
-          <div v-if="!editing">
+        <div class="hero-left">
+          <div
+            class="avatar"
+            :style="
+              profile.avatarUrl
+                ? { backgroundImage: `url(${profile.avatarUrl})` }
+                : {}
+            "
+          >
+            <span v-if="!profile.avatarUrl">{{
+              profile.username[0].toUpperCase()
+            }}</span>
+          </div>
+          <div class="hero-info">
+            <h1>{{ profile.username }}</h1>
+            <p class="joined">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="icon-sm"
+              >
+                <rect
+                  x="3"
+                  y="4"
+                  width="18"
+                  height="18"
+                  rx="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M16 2v4M8 2v4M3 10h18"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Member since {{ formatDate(profile.createdAt) }}
+            </p>
             <p class="bio">
               {{
                 profile.bio ||
@@ -97,9 +101,23 @@ watch(() => route.params.username, loadProfile, { immediate: true });
                   : "No bio yet.")
               }}
             </p>
-            <button v-if="isOwnProfile" class="btn" @click="editing = true">
+
+            <router-link v-if="isOwnProfile" to="/settings" class="btn">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="icon-sm"
+              >
+                <path
+                  d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
               Edit profile
-            </button>
+            </router-link>
             <FollowButton
               v-else-if="authStore.isAuthenticated"
               :username="profile.username"
@@ -107,24 +125,9 @@ watch(() => route.params.username, loadProfile, { immediate: true });
               @changed="(v) => (profile.followCounts.followers += v ? 1 : -1)"
             />
           </div>
-          <div v-else class="bio-edit">
-            <textarea
-              v-model="editBio"
-              placeholder="Write something about yourself..."
-              maxlength="280"
-            ></textarea>
-            <div class="bio-actions">
-              <button
-                class="btn btn-primary"
-                :disabled="saving"
-                @click="saveBio"
-              >
-                {{ saving ? "Saving..." : "Save" }}
-              </button>
-              <button class="btn" @click="editing = false">Cancel</button>
-            </div>
-          </div>
         </div>
+
+        <GenreRadar :data="profile.genreBreakdown" />
       </div>
 
       <div class="stats-row">
@@ -133,7 +136,9 @@ watch(() => route.params.username, loadProfile, { immediate: true });
           <div class="stat-label">Reviews</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ profile.stats.avgScore ?? "—" }}</div>
+          <div class="stat-value accent">
+            {{ profile.stats.avgScore ?? "—" }}
+          </div>
           <div class="stat-label">Avg. score given</div>
         </div>
         <div class="stat-card">
@@ -147,7 +152,9 @@ watch(() => route.params.username, loadProfile, { immediate: true });
       </div>
 
       <section class="section">
-        <h2>Recent reviews</h2>
+        <div class="section-head">
+          <h2><span class="bar"></span>Recent reviews</h2>
+        </div>
         <div v-if="profile.recentReviews.length === 0" class="empty-state">
           No reviews yet.
         </div>
@@ -166,6 +173,9 @@ watch(() => route.params.username, loadProfile, { immediate: true });
             <div class="review-info">
               <div class="review-title">{{ r.title }}</div>
               <div class="review-comment" v-if="r.comment">{{ r.comment }}</div>
+              <div class="review-comment placeholder" v-else>
+                No comment left
+              </div>
             </div>
             <div class="review-score">★ {{ r.score }}</div>
           </div>
@@ -173,13 +183,30 @@ watch(() => route.params.username, loadProfile, { immediate: true });
       </section>
 
       <section class="section">
-        <h2>Top 5</h2>
-        <div class="empty-state">
-          {{
-            isOwnProfile
-              ? "You haven't set your top 5 yet — coming soon."
-              : `${profile.username} hasn't set a top 5 yet.`
-          }}
+        <div class="section-head">
+          <h2><span class="bar"></span>Top 5</h2>
+        </div>
+        <div class="empty-state coming-soon">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            class="icon-lg"
+          >
+            <path
+              d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <p>
+            {{
+              isOwnProfile
+                ? "You haven't set your top 5 yet — coming soon."
+                : `${profile.username} hasn't set a top 5 yet.`
+            }}
+          </p>
         </div>
       </section>
     </div>
@@ -189,22 +216,48 @@ watch(() => route.params.username, loadProfile, { immediate: true });
 </template>
 
 <style scoped>
+.page {
+  min-height: 100vh;
+}
+
 .state-message {
   text-align: center;
   color: var(--text-mute);
-  padding: 80px 0;
+  padding: 100px 0;
+  font-size: 14px;
 }
 
 .hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 40px;
+  align-items: center;
+  padding: 56px 56px 48px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -160px;
+  left: -120px;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(47, 91, 255, 0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.hero-left {
+  position: relative;
   display: flex;
   gap: 28px;
-  padding: 48px 56px;
-  border-bottom: 1px solid var(--border);
+  z-index: 1;
 }
 
 .avatar {
-  width: 96px;
-  height: 96px;
+  width: 104px;
+  height: 104px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--blue), var(--navy));
   background-size: cover;
@@ -212,104 +265,143 @@ watch(() => route.params.username, loadProfile, { immediate: true });
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: 34px;
   font-weight: 800;
   color: #fff;
   flex-shrink: 0;
+  border: 3px solid var(--bg-card);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .hero-info h1 {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
-  margin-bottom: 4px;
+  margin: 0 0 6px;
+  color: var(--text);
+  letter-spacing: -0.3px;
 }
 .joined {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   color: var(--text-mute);
-  margin-bottom: 12px;
+  margin: 0 0 14px;
 }
 .bio {
   font-size: 14px;
   color: var(--text-dim);
-  margin-bottom: 12px;
-  max-width: 500px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+  max-width: 460px;
 }
 
-.bio-edit textarea {
-  width: 100%;
-  max-width: 500px;
-  min-height: 70px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 12px;
-  color: var(--text);
-  font-size: 13px;
-  resize: vertical;
-  font-family: inherit;
+.icon-sm {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
-.bio-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
+.icon-lg {
+  width: 30px;
+  height: 30px;
+  color: var(--text-mute);
+  margin-bottom: 10px;
 }
 
 .btn {
-  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   border: 1px solid var(--border);
   color: var(--text);
   background: var(--bg-card);
   cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s ease;
 }
-.btn-primary {
-  background: var(--blue);
+.btn:hover {
   border-color: var(--blue);
-  color: #fff;
-}
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .stats-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 14px;
-  padding: 24px 56px;
+  padding: 28px 56px;
   border-bottom: 1px solid var(--border);
 }
 .stat-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 22px;
+  border-radius: 12px;
+  padding: 18px;
   text-align: center;
+  transition: border-color 0.15s ease;
+}
+.stat-card:hover {
+  border-color: rgba(47, 91, 255, 0.4);
 }
 .stat-value {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
+  color: var(--text);
+}
+.stat-value.accent {
   color: var(--amber);
 }
 .stat-label {
   font-size: 11px;
   color: var(--text-mute);
-  margin-top: 2px;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 .section {
-  padding: 32px 56px;
+  padding: 36px 56px;
   border-bottom: 1px solid var(--border);
 }
-.section h2 {
-  font-size: 17px;
-  font-weight: 700;
-  margin-bottom: 16px;
+.section-head {
+  margin-bottom: 18px;
 }
+.section h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+.bar {
+  width: 3px;
+  height: 15px;
+  background: var(--blue);
+  border-radius: 2px;
+  display: inline-block;
+}
+
 .empty-state {
   color: var(--text-mute);
   font-size: 13px;
+}
+.empty-state.coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+.empty-state.coming-soon p {
+  margin: 0;
+  max-width: 280px;
 }
 
 .review-list {
@@ -320,53 +412,77 @@ watch(() => route.params.username, loadProfile, { immediate: true });
 .review-row {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 16px;
+  border-radius: 12px;
+  padding: 14px 18px;
+  transition: border-color 0.15s ease;
+}
+.review-row:hover {
+  border-color: rgba(47, 91, 255, 0.3);
 }
 .review-poster {
-  width: 40px;
-  height: 56px;
-  border-radius: 6px;
+  width: 44px;
+  height: 62px;
+  border-radius: 7px;
   background-color: var(--navy);
   background-size: cover;
   background-position: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 .review-info {
   flex: 1;
   min-width: 0;
 }
 .review-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
 }
 .review-comment {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-mute);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.review-comment.placeholder {
+  font-style: italic;
+  opacity: 0.6;
+}
 .review-score {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   color: var(--amber);
   flex-shrink: 0;
+  background: rgba(240, 180, 41, 0.1);
+  padding: 4px 10px;
+  border-radius: 8px;
 }
 
 @media (max-width: 768px) {
   .hero {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .hero-left {
     flex-direction: column;
     align-items: center;
-    text-align: center;
-    padding: 32px 24px;
   }
-  .stats-row,
-  .section {
+  .bio {
+    max-width: 100%;
+  }
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
     padding: 20px 24px;
+  }
+  .section {
+    padding: 28px 24px;
   }
 }
 </style>

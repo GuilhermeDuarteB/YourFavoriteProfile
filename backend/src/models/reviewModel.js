@@ -103,3 +103,22 @@ export async function findExistingReview({ userId, mediaId, episodeId }) {
   );
   return result.rows[0];
 }
+
+//genre breakdown for profile radar chart
+
+export async function getGenreBreakdown(userId) {
+  const result = await pools.query(
+    `SELECT unnest(m.genres) AS genre, COUNT(*) AS count
+     FROM reviews r
+     JOIN media m ON m.id = r.media_id
+     WHERE r.user_id = $1 AND m.genres IS NOT NULL
+     GROUP BY genre
+     ORDER BY count DESC
+     LIMIT 5`,
+    [userId],
+  );
+  return result.rows.map((row) => ({
+    genre: row.genre,
+    count: Number(row.count),
+  }));
+}
