@@ -17,7 +17,8 @@ The product's differentiator is episode-by-episode TV reviewing with an automati
 ## Current features
 
 - Registration and login with JWT authentication and bcrypt password hashing
-- Public profiles with reviews, Top 5, genre radar, follower counts, and follow/unfollow
+- Public profiles with reviews, a publicly displayed Top 5, genre radar, follower counts, and follow/unfollow
+- Top 5 management in Settings with ranked movie, series, and game selections
 - User search and global navbar search across users and media
 - Browse and discover for movies, series, and games with URL-synchronised type, genre, decade, rating, sort, and text filters
 - Provider-aware genre filtering: TMDB and RAWG taxonomies are mapped separately, including mixed and All types Browse selections
@@ -25,6 +26,7 @@ The product's differentiator is episode-by-episode TV reviewing with an automati
 - Media detail pages with provider metadata, cast, seasons, platforms, reviews, and watchlist actions
 - Review create, update, delete, and score validation
 - TMDB and RAWG integrations with normalized media cards and partial-provider failure handling
+- Interactive OpenAPI API documentation with JWT-authenticated endpoint testing through Swagger UI
 - Responsive public UI, API rate limiting, CORS configuration, and startup environment/database checks
 
 ## In development and roadmap
@@ -39,7 +41,7 @@ The product's differentiator is episode-by-episode TV reviewing with an automati
 
 Frontend: Vue 3, Vite, Pinia, Vue Router, and Axios.
 
-Backend: Node.js, Express, PostgreSQL, JWT, bcrypt, and express-rate-limit.
+Backend: Node.js, Express, PostgreSQL, JWT, bcrypt, express-rate-limit, OpenAPI 3, Swagger UI (`swagger-ui-express`), and a YAML-based API specification.
 
 External APIs: [TMDB](https://www.themoviedb.org/) for movies and series, and [RAWG](https://rawg.io/apidocs) for games.
 
@@ -64,6 +66,8 @@ The provider services normalize external responses into a shared media-card and 
 ```text
 YourFavoriteProfile/
 ├── backend/
+│   ├── docs/
+│   │   └── openapi.yaml      # OpenAPI 3 API specification
 │   ├── src/
 │   │   ├── config/          # Environment and PostgreSQL setup
 │   │   ├── controllers/     # HTTP request handlers
@@ -112,6 +116,8 @@ yarn dev
 
 The API listens on `http://localhost:3000` by default. `yarn start` runs the production server entry point.
 
+Swagger UI is available at `http://localhost:3000/api-docs`.
+
 ### Frontend
 
 ```bash
@@ -122,6 +128,14 @@ yarn dev
 ```
 
 The Vite development server listens on `http://localhost:5173` by default.
+
+## API Documentation
+
+The backend includes interactive OpenAPI documentation through Swagger UI:
+
+`http://localhost:3000/api-docs`
+
+The documentation lets developers inspect API endpoints, request parameters and bodies, response schemas, and test public endpoints directly. Use Swagger UI's **Authorize** button to provide a JWT Bearer token and test protected endpoints. Protected endpoints use Bearer JWT authentication; endpoints with optional authentication remain usable anonymously.
 
 ## Environment variables
 

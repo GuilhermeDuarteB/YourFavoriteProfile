@@ -38,9 +38,13 @@ function search() {
       >
         Watchlist
       </router-link>
-      <label v-if="authStore.isAuthenticated">
-        <router-link to="/settings" class="settings-link">⚙</router-link>
-      </label>
+      <router-link
+        v-if="authStore.isAuthenticated"
+        to="/settings"
+        class="settings-link"
+        aria-label="Settings"
+        title="Settings"
+      >⚙</router-link>
     </div>
     <div class="nav-right">
       <input

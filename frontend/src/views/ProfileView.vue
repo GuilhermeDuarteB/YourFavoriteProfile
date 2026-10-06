@@ -108,7 +108,11 @@ watch(() => route.params.username, loadProfile, { immediate: true });
               }}
             </p>
 
-            <router-link v-if="isOwnProfile" to="/settings" class="btn">
+            <router-link
+              v-if="isOwnProfile"
+              :to="{ path: '/settings', query: { section: 'profile' } }"
+              class="btn"
+            >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -217,7 +221,10 @@ watch(() => route.params.username, loadProfile, { immediate: true });
                 : `${profile.username} hasn't set a top 5 yet.`
             }}
           </p>
-          <router-link v-if="isOwnProfile" to="/settings" class="btn"
+          <router-link
+            v-if="isOwnProfile"
+            :to="{ path: '/settings', query: { section: 'profile' }, hash: '#top-five' }"
+            class="btn"
             >Set your top 5</router-link
           >
         </div>

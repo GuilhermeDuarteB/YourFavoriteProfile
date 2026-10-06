@@ -66,7 +66,7 @@ export async function getMediaReviews(req, res) {
     res.json(reviews);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error loading review" });
+    res.status(500).json({ error: "Error loading reviews" });
   }
 }
 
@@ -97,7 +97,7 @@ export async function putReview(req, res) {
     res.json(updated);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error updating Review" });
+    res.status(500).json({ error: "Error updating review" });
   }
 }
 
@@ -115,6 +115,6 @@ export async function removeReview(req, res) {
     res.status(204).send();
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Errpr deleting review" });
+    res.status(500).json({ error: "Error deleting review" });
   }
 }

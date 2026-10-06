@@ -339,6 +339,6 @@ export async function getMediaDetails(req, res) {
     res.json({ ...detail, mediaId: media.id });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error loadind media details" });
+    res.status(500).json({ error: "Error loading media details" });
   }
 }

@@ -1,0 +1,1567 @@
+openapi: 3.0.3
+
+info:
+  title: Your Favorite Profile API
+  version: 1.0.0
+  description: >
+    REST API for Your Favorite Profile, supporting authentication,
+    media discovery, reviews, public profiles, follows, watchlists
+    and Top 5 media.
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Media
+  - name: Reviews
+  - name: Follow
+  - name: Watchlist
+  - name: Top Five
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+
+        username:
+          type: string
+          example: guilherme
+
+        email:
+          type: string
+          format: email
+          example: guilherme@example.com
+
+        bio:
+          type: string
+          nullable: true
+
+        avatar_url:
+          type: string
+          nullable: true
+
+        created_at:
+          type: string
+          format: date-time
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+
+        token:
+          type: string
+          description: JWT access token.
+
+    MediaCard:
+      type: object
+      properties:
+        id:
+          oneOf:
+            - type: integer
+            - type: string
+          example: 550
+
+        source:
+          type: string
+          enum:
+            - tmdb
+            - rawg
+          example: tmdb
+
+        title:
+          type: string
+          example: Fight Club
+
+        type:
+          type: string
+          enum:
+            - movie
+            - series
+            - game
+          example: movie
+
+        releaseDate:
+          type: string
+          nullable: true
+          example: "1999-10-15"
+
+        meta:
+          type: string
+          nullable: true
+          example: "1999"
+
+        score:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+          maximum: 10
+          example: 8.4
+
+        posterUrl:
+          type: string
+          nullable: true
+          example: https://image.tmdb.org/t/p/w500/example.jpg
+
+        developer:
+          type: string
+          nullable: true
+          description: Present mainly for game results.
+          example: Rockstar Games
+
+    LatestEpisode:
+      type: object
+      properties:
+        code:
+          type: string
+          example: S02E08
+
+        title:
+          type: string
+          example: Episode Title
+
+        show:
+          type: string
+          example: Example Series
+
+        airDate:
+          type: string
+          nullable: true
+          example: "2026-10-01"
+
+        posterUrl:
+          type: string
+          nullable: true
+
+    CastMember:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Example Actor
+
+        character:
+          type: string
+          example: Example Character
+
+        photoUrl:
+          type: string
+          nullable: true
+
+    Season:
+      type: object
+      properties:
+        seasonNumber:
+          type: integer
+          example: 1
+
+        name:
+          type: string
+          example: Season 1
+
+        episodeCount:
+          type: integer
+          example: 10
+
+    MediaDetails:
+      type: object
+      properties:
+        externalId:
+          type: string
+          example: "550"
+
+        mediaId:
+          type: integer
+          description: Internal database media ID.
+          example: 42
+
+        source:
+          type: string
+          enum:
+            - tmdb
+            - rawg
+
+        type:
+          type: string
+          enum:
+            - movie
+            - series
+            - game
+
+        title:
+          type: string
+          example: Fight Club
+
+        overview:
+          type: string
+          nullable: true
+
+        posterUrl:
+          type: string
+          nullable: true
+
+        releaseDate:
+          type: string
+          nullable: true
+
+        score:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+          maximum: 10
+
+        genres:
+          type: array
+          items:
+            type: string
+
+        cast:
+          type: array
+          description: Present for movies and TV series.
+          items:
+            $ref: "#/components/schemas/CastMember"
+
+        seasons:
+          type: array
+          description: Present for TV series.
+          items:
+            $ref: "#/components/schemas/Season"
+
+        developer:
+          type: string
+          nullable: true
+          description: Present for games.
+
+        platforms:
+          type: array
+          description: Present for games.
+          items:
+            type: string
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 15
+
+        user_id:
+          type: integer
+          example: 3
+
+        media_id:
+          type: integer
+          nullable: true
+          example: 42
+
+        episode_id:
+          type: integer
+          nullable: true
+          example: 120
+
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 10
+          example: 8.5
+
+        comment:
+          type: string
+          nullable: true
+          example: Really enjoyed this one.
+
+        username:
+          type: string
+          description: Included when reviews are loaded for media or episodes.
+          example: guilherme
+
+        avatar_url:
+          type: string
+          nullable: true
+          description: Included when reviews are loaded for media or episodes.
+
+        created_at:
+          type: string
+          format: date-time
+
+        updated_at:
+          type: string
+          format: date-time
+
+    WatchlistEntry:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          example: 3
+
+        media_id:
+          type: integer
+          example: 42
+
+        status:
+          type: string
+          enum:
+            - want_to_watch
+            - watching
+            - completed
+            - dropped
+          example: watching
+
+        external_id:
+          type: string
+          nullable: true
+          example: "550"
+
+        title:
+          type: string
+          nullable: true
+          example: Fight Club
+
+        poster_url:
+          type: string
+          nullable: true
+
+        type:
+          type: string
+          nullable: true
+          enum:
+            - movie
+            - series
+            - game
+
+        release_date:
+          type: string
+          nullable: true
+          example: "1999-10-15"
+
+        added_at:
+          type: string
+          format: date-time
+
+    TopFiveInput:
+      type: object
+      required:
+        - mediaId
+        - rank
+      properties:
+        mediaId:
+          type: integer
+          minimum: 1
+          example: 42
+
+        rank:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 1
+
+    TopFiveEntry:
+      type: object
+      additionalProperties: true
+      properties:
+        rank:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 1
+
+        media_id:
+          type: integer
+          example: 42
+
+        external_id:
+          type: string
+          nullable: true
+          example: "550"
+
+        title:
+          type: string
+          nullable: true
+          example: Fight Club
+
+        poster_url:
+          type: string
+          nullable: true
+
+        type:
+          type: string
+          nullable: true
+          enum:
+            - movie
+            - series
+            - game
+
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      description: Creates a new account and returns the authenticated user/session data.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                  example: guilherme
+
+                email:
+                  type: string
+                  format: email
+                  example: guilherme@example.com
+
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: password123
+
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+        "400":
+          description: Invalid registration data
+
+        "409":
+          description: Username or email already exists
+
+        "500":
+          description: Internal server error
+
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Log in
+      description: Authenticates a user using email and password.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: guilherme@example.com
+
+                password:
+                  type: string
+                  format: password
+                  example: password123
+
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+        "400":
+          description: Missing or invalid credentials
+
+        "401":
+          description: Invalid email or password
+
+        "500":
+          description: Internal server error
+
+  /api/auth/me/email:
+    put:
+      tags:
+        - Auth
+      summary: Update account email
+      description: Updates the authenticated user's email address after password confirmation.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - newEmail
+                - password
+              properties:
+                newEmail:
+                  type: string
+                  format: email
+                  example: newemail@example.com
+
+                password:
+                  type: string
+                  format: password
+                  example: password123
+
+      responses:
+        "200":
+          description: Email updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+        "400":
+          description: Invalid email or request data
+
+        "401":
+          description: Authentication required or incorrect password
+
+        "409":
+          description: Email already in use
+
+        "500":
+          description: Internal server error
+
+  /api/auth/me/username:
+    put:
+      tags:
+        - Auth
+      summary: Update account username
+      description: Updates the authenticated user's username after password confirmation.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - newUsername
+                - password
+              properties:
+                newUsername:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                  example: new_username
+
+                password:
+                  type: string
+                  format: password
+                  example: password123
+
+      responses:
+        "200":
+          description: Username updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+        "400":
+          description: Invalid username or request data
+
+        "401":
+          description: Authentication required or incorrect password
+
+        "409":
+          description: Username already in use
+
+        "500":
+          description: Internal server error
+
+  /api/auth/me:
+    delete:
+      tags:
+        - Auth
+      summary: Delete account
+      description: Permanently deletes the authenticated user's account after password confirmation.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  format: password
+                  example: password123
+
+      responses:
+        "204":
+          description: Account deleted successfully
+
+        "400":
+          description: Password is required
+
+        "401":
+          description: Authentication required or incorrect password
+
+        "500":
+          description: Internal server error
+
+  /api/users/search:
+    get:
+      tags:
+        - Users
+      summary: Search users
+      description: Searches users by username.
+
+      parameters:
+        - in: query
+          name: q
+          required: false
+          description: Username search term.
+          schema:
+            type: string
+          example: gui
+
+      responses:
+        "200":
+          description: User search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+
+        "500":
+          description: Error searching users
+
+  /api/users/{username}:
+    get:
+      tags:
+        - Users
+      summary: Get public user profile
+      description: >
+        Returns a public profile including stats, recent reviews,
+        genre breakdown, follow information and Top 5 media.
+        Authentication is optional and is used to determine whether
+        the current viewer follows the profile.
+
+      security:
+        - {}
+        - bearerAuth: []
+
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          example: guilherme
+
+      responses:
+        "200":
+          description: Public profile loaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                    example: guilherme
+
+                  bio:
+                    type: string
+                    nullable: true
+
+                  avatarUrl:
+                    type: string
+                    nullable: true
+
+                  createdAt:
+                    type: string
+                    format: date-time
+
+                  stats:
+                    type: object
+                    additionalProperties: true
+
+                  recentReviews:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+
+                  genreBreakdown:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+
+                  followCounts:
+                    type: object
+                    additionalProperties: true
+
+                  viewerFollows:
+                    type: boolean
+
+                  topFive:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TopFiveEntry"
+
+        "404":
+          description: User not found
+
+        "500":
+          description: Error loading profile
+
+  /api/users/me:
+    put:
+      tags:
+        - Users
+      summary: Update current user's public profile
+      description: Updates the authenticated user's bio and avatar URL.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bio:
+                  type: string
+                  nullable: true
+                  example: Software developer and movie fan.
+
+                avatarUrl:
+                  type: string
+                  nullable: true
+                  example: https://example.com/avatar.jpg
+
+      responses:
+        "200":
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+        "401":
+          description: Authentication required or invalid token
+
+        "500":
+          description: Error updating profile
+
+  /api/media/trending:
+    get:
+      tags:
+        - Media
+      summary: Get trending media
+      description: >
+        Returns a mixed list of trending movies, TV series and games.
+        TMDB and RAWG are queried independently, so partial results may still
+        be returned if one provider fails.
+
+      responses:
+        "200":
+          description: Trending media loaded successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MediaCard"
+
+        "502":
+          description: All trending providers are unavailable
+
+        "500":
+          description: Error loading trending media
+
+  /api/media/latest-episodes:
+    get:
+      tags:
+        - Media
+      summary: Get latest TV episodes
+      description: Returns the latest aired episode information from trending TV series.
+
+      responses:
+        "200":
+          description: Latest episodes loaded successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LatestEpisode"
+
+        "500":
+          description: Error loading latest episodes
+
+  /api/media/discover:
+    get:
+      tags:
+        - Media
+      summary: Discover or search media
+      description: >
+        Discovers or searches movies, TV series and games using TMDB and RAWG.
+        Genre filters are provider-aware, and unsupported media types are
+        excluded rather than receiving invalid genre parameters.
+
+      parameters:
+        - in: query
+          name: types
+          required: false
+          description: Comma-separated media types.
+          schema:
+            type: string
+            default: movie,series,game
+          example: movie,series,game
+
+        - in: query
+          name: genre
+          required: false
+          description: Genre key. Use all for no genre filter.
+          schema:
+            type: string
+            default: all
+          example: drama
+
+        - in: query
+          name: decade
+          required: false
+          description: Starting year of the decade, or all.
+          schema:
+            type: string
+            default: all
+          example: "2010"
+
+        - in: query
+          name: minRating
+          required: false
+          description: Minimum normalized rating from 0 to 10.
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+            default: 0
+          example: 7
+
+        - in: query
+          name: sortBy
+          required: false
+          description: Result sorting mode.
+          schema:
+            type: string
+            enum:
+              - popularity
+              - rating
+              - release_date
+              - title
+            default: popularity
+
+        - in: query
+          name: page
+          required: false
+          description: Page number.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+
+        - in: query
+          name: query
+          required: false
+          description: Optional text search query.
+          schema:
+            type: string
+          example: batman
+
+      responses:
+        "200":
+          description: Discover/search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: integer
+                    example: 1
+
+                  pageSize:
+                    type: integer
+                    example: 50
+
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MediaCard"
+
+                  hasMore:
+                    type: boolean
+                    example: true
+
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+
+        "400":
+          description: Genre is not supported for the selected media types
+
+        "502":
+          description: All selected media providers are unavailable
+
+        "500":
+          description: Error loading discover results
+
+  /api/media/{type}/{id}:
+    get:
+      tags:
+        - Media
+      summary: Get media details
+      description: >
+        Loads full details from TMDB or RAWG and ensures the media exists
+        in the local database before returning the response.
+
+      parameters:
+        - in: path
+          name: type
+          required: true
+          schema:
+            type: string
+            enum:
+              - movie
+              - series
+              - game
+          example: movie
+
+        - in: path
+          name: id
+          required: true
+          description: External TMDB or RAWG media ID.
+          schema:
+            type: string
+          example: "550"
+
+      responses:
+        "200":
+          description: Media details loaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaDetails"
+
+        "400":
+          description: Invalid media type
+
+        "500":
+          description: Error loading media details
+
+  /api/reviews:
+    post:
+      tags:
+        - Reviews
+      summary: Create a review
+      description: >
+        Creates a review for either a media item or an episode.
+        Exactly one of mediaId or episodeId must be provided.
+        A user may only have one review for the same media or episode.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - score
+              properties:
+                mediaId:
+                  type: integer
+                  nullable: true
+                  example: 42
+
+                episodeId:
+                  type: integer
+                  nullable: true
+                  example: 120
+
+                score:
+                  type: number
+                  format: float
+                  minimum: 0
+                  maximum: 10
+                  example: 8.5
+
+                comment:
+                  type: string
+                  nullable: true
+                  example: Really enjoyed this one.
+
+      responses:
+        "201":
+          description: Review created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+        "400":
+          description: Invalid review data or invalid media/episode selection
+
+        "401":
+          description: Authentication required or invalid token
+
+        "409":
+          description: User already reviewed this media or episode
+
+        "500":
+          description: Error creating review
+
+  /api/reviews/media/{mediaId}:
+    get:
+      tags:
+        - Reviews
+      summary: Get reviews for a media item
+      description: Returns all reviews associated with a media item.
+
+      parameters:
+        - in: path
+          name: mediaId
+          required: true
+          schema:
+            type: integer
+          example: 42
+
+      responses:
+        "200":
+          description: Media reviews loaded successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+
+        "500":
+          description: Error loading reviews
+
+  /api/reviews/episode/{episodeId}:
+    get:
+      tags:
+        - Reviews
+      summary: Get reviews for an episode
+      description: Returns all reviews associated with a TV episode.
+
+      parameters:
+        - in: path
+          name: episodeId
+          required: true
+          schema:
+            type: integer
+          example: 120
+
+      responses:
+        "200":
+          description: Episode reviews loaded successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+
+        "500":
+          description: Error loading reviews
+
+  /api/reviews/{id}:
+    put:
+      tags:
+        - Reviews
+      summary: Update a review
+      description: >
+        Updates an existing review.
+        Only the user who created the review is allowed to edit it.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          example: 15
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - score
+              properties:
+                score:
+                  type: number
+                  format: float
+                  minimum: 0
+                  maximum: 10
+                  example: 9
+
+                comment:
+                  type: string
+                  nullable: true
+                  example: Changed my mind after a rewatch.
+
+      responses:
+        "200":
+          description: Review updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+        "400":
+          description: Invalid review data
+
+        "401":
+          description: Authentication required or invalid token
+
+        "403":
+          description: User can only edit their own reviews
+
+        "404":
+          description: Review not found
+
+        "500":
+          description: Error updating review
+
+    delete:
+      tags:
+        - Reviews
+      summary: Delete a review
+      description: >
+        Deletes an existing review.
+        Only the user who created the review is allowed to delete it.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          example: 15
+
+      responses:
+        "204":
+          description: Review deleted successfully
+
+        "401":
+          description: Authentication required or invalid token
+
+        "403":
+          description: User can only delete their own reviews
+
+        "404":
+          description: Review not found
+
+        "500":
+          description: Error deleting review
+
+  /api/watchlist:
+    post:
+      tags:
+        - Watchlist
+      summary: Add media to watchlist
+      description: >
+        Adds a media item to the authenticated user's watchlist.
+        If status is omitted, it defaults to want_to_watch.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - mediaId
+              properties:
+                mediaId:
+                  type: integer
+                  example: 42
+
+                status:
+                  type: string
+                  enum:
+                    - want_to_watch
+                    - watching
+                    - completed
+                    - dropped
+                  default: want_to_watch
+                  example: watching
+
+      responses:
+        "201":
+          description: Media added to watchlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistEntry"
+
+        "400":
+          description: Invalid mediaId or watchlist status
+
+        "401":
+          description: Authentication required or invalid token
+
+        "500":
+          description: Error adding to watchlist
+
+  /api/watchlist/me:
+    get:
+      tags:
+        - Watchlist
+      summary: Get current user's watchlist
+      description: >
+        Returns the authenticated user's watchlist.
+        Results may optionally be filtered by status.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - in: query
+          name: status
+          required: false
+          description: Optional watchlist status filter.
+          schema:
+            type: string
+            enum:
+              - want_to_watch
+              - watching
+              - completed
+              - dropped
+
+      responses:
+        "200":
+          description: Watchlist loaded successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WatchlistEntry"
+
+        "400":
+          description: Invalid watchlist status
+
+        "401":
+          description: Authentication required or invalid token
+
+        "500":
+          description: Error loading watchlist
+
+  /api/watchlist/{mediaId}:
+    get:
+      tags:
+        - Watchlist
+      summary: Get watchlist status for a media item
+      description: Checks whether a media item is present in the authenticated user's watchlist.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - in: path
+          name: mediaId
+          required: true
+          schema:
+            type: integer
+          example: 42
+
+      responses:
+        "200":
+          description: Watchlist status returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inWatchlist:
+                    type: boolean
+                    example: true
+
+                  status:
+                    type: string
+                    nullable: true
+                    enum:
+                      - want_to_watch
+                      - watching
+                      - completed
+                      - dropped
+                    example: watching
+
+        "401":
+          description: Authentication required or invalid token
+
+        "500":
+          description: Error checking watchlist
+
+    delete:
+      tags:
+        - Watchlist
+      summary: Remove media from watchlist
+      description: Removes a media item from the authenticated user's watchlist.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - in: path
+          name: mediaId
+          required: true
+          schema:
+            type: integer
+          example: 42
+
+      responses:
+        "204":
+          description: Media removed from watchlist successfully
+
+        "401":
+          description: Authentication required or invalid token
+
+        "500":
+          description: Error removing from watchlist
+
+  /api/follow/{username}:
+    post:
+      tags:
+        - Follow
+      summary: Follow a user
+      description: >
+        Makes the authenticated user follow another user.
+        Users cannot follow themselves.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - in: path
+          name: username
+          required: true
+          description: Username of the user to follow.
+          schema:
+            type: string
+          example: johndoe
+
+      responses:
+        "201":
+          description: User followed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  following:
+                    type: boolean
+                    example: true
+
+        "400":
+          description: Cannot follow yourself
+
+        "401":
+          description: Authentication required or invalid token
+
+        "404":
+          description: User not found
+
+        "500":
+          description: Internal server error
+
+    delete:
+      tags:
+        - Follow
+      summary: Unfollow a user
+      description: Makes the authenticated user stop following another user.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - in: path
+          name: username
+          required: true
+          description: Username of the user to unfollow.
+          schema:
+            type: string
+          example: johndoe
+
+      responses:
+        "200":
+          description: User unfollowed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  following:
+                    type: boolean
+                    example: false
+
+        "401":
+          description: Authentication required or invalid token
+
+        "404":
+          description: User not found
+
+        "500":
+          description: Internal server error
+
+  /api/top-five:
+    put:
+      tags:
+        - Top Five
+      summary: Update current user's Top 5
+      description: >
+        Replaces the authenticated user's Top 5 media list.
+        Up to five entries may be supplied.
+        Media IDs and ranks must be unique, and ranks must be between 1 and 5.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - items
+              properties:
+                items:
+                  type: array
+                  maxItems: 5
+                  uniqueItems: true
+                  items:
+                    $ref: "#/components/schemas/TopFiveInput"
+
+            example:
+              items:
+                - mediaId: 42
+                  rank: 1
+                - mediaId: 18
+                  rank: 2
+                - mediaId: 77
+                  rank: 3
+
+      responses:
+        "200":
+          description: Top 5 updated successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopFiveEntry"
+
+        "400":
+          description: >
+            Invalid Top 5 data, duplicate media IDs or ranks,
+            invalid rank values, or media IDs that do not exist.
+
+        "401":
+          description: Authentication required or invalid token
+
+        "500":
+          description: Error updating Top 5
+
+  /api/top-five/{username}:
+    get:
+      tags:
+        - Top Five
+      summary: Get a user's Top 5
+      description: Returns the public Top 5 media list for the specified username.
+
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          example: guilherme
+
+      responses:
+        "200":
+          description: Top 5 loaded successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopFiveEntry"
+
+        "404":
+          description: User not found
+
+        "500":
+          description: Error loading Top 5
