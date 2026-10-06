@@ -1,24 +1,28 @@
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/authStore';
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "../stores/authStore";
+import AuthHero from "../components/AuthHero.vue";
 
 const authStore = useAuthStore();
 const router = useRouter();
 
-const email = ref('');
-const password = ref('');
-const error = ref('');
+const email = ref("");
+const password = ref("");
+const error = ref("");
 const loading = ref(false);
 
 async function handleSubmit() {
-  error.value = '';
+  error.value = "";
   loading.value = true;
   try {
     await authStore.login({ email: email.value, password: password.value });
-    router.push({ name: 'profile', params: { username: authStore.user.username } });
+    router.push({
+      name: "profile",
+      params: { username: authStore.user.username },
+    });
   } catch (err) {
-    error.value = err.response?.data?.error || 'Login Error';
+    error.value = err.response?.data?.error || "Login Error";
   } finally {
     loading.value = false;
   }
@@ -26,46 +30,96 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="form">
-    <div class="form-logo">
-      <img src="../assets/ifp-logo.png" alt="" />
-      <h1>Welcome Back</h1>
-      <p class="subtitle">Log in to continue your journey!</p>
+  <div class="auth-page">
+    <AuthHero />
+    <div class="form">
+      <div class="form-logo">
+        <img src="../assets/ifp-logo.png" alt="" />
+        <h1>Welcome Back</h1>
+        <p class="subtitle">Log in to continue your journey!</p>
+      </div>
+
+      <form @submit.prevent="handleSubmit">
+        <div class="field">
+          <label>Email</label>
+          <div class="input-wrap">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <rect
+                x="2"
+                y="4"
+                width="20"
+                height="16"
+                rx="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="m2 6 10 7 10-7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <input
+              v-model="email"
+              type="email"
+              placeholder="Enter your email"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Password</label>
+          <div class="input-wrap">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <rect
+                x="3"
+                y="11"
+                width="18"
+                height="10"
+                rx="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M7 11V7a5 5 0 0 1 10 0v4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <input
+              v-model="password"
+              type="password"
+              placeholder="Enter your password"
+              required
+            />
+          </div>
+        </div>
+
+        <p v-if="error" class="error">{{ error }}</p>
+
+        <button type="submit" :disabled="loading">
+          {{ loading ? "Logging in..." : "Login" }}
+        </button>
+
+        <p class="switch">
+          Don't have an account?
+          <router-link to="/register">Register</router-link>
+        </p>
+      </form>
     </div>
-
-    <form @submit.prevent="handleSubmit">
-      <div class="field">
-        <label>Email</label>
-        <div class="input-wrap">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <rect x="2" y="4" width="20" height="16" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="m2 6 10 7 10-7" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <input v-model="email" type="email" placeholder="Enter your email" required />
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Password</label>
-        <div class="input-wrap">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <rect x="3" y="11" width="18" height="10" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <input v-model="password" type="password" placeholder="Enter your password" required />
-        </div>
-      </div>
-
-      <p v-if="error" class="error">{{ error }}</p>
-
-      <button type="submit" :disabled="loading">
-        {{ loading ? 'Logging in...' : 'Login' }}
-      </button>
-
-      <p class="switch">
-        Don't have an account? <router-link to="/register">Register</router-link>
-      </p>
-    </form>
   </div>
 </template>
 
@@ -159,7 +213,9 @@ input {
   color: #f4f2ee;
   font-size: 0.9rem;
   box-sizing: border-box;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 input::placeholder {
@@ -182,7 +238,9 @@ button {
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s ease, opacity 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    opacity 0.15s ease;
 }
 
 button:hover:not(:disabled) {
