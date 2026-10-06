@@ -186,7 +186,11 @@ watch(() => route.params.username, loadProfile, { immediate: true });
         <div class="section-head">
           <h2><span class="bar"></span>Top 5</h2>
         </div>
-        <div class="empty-state coming-soon">
+
+        <div
+          v-if="!profile.topFive || profile.topFive.length === 0"
+          class="empty-state coming-soon"
+        >
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -203,10 +207,33 @@ watch(() => route.params.username, loadProfile, { immediate: true });
           <p>
             {{
               isOwnProfile
-                ? "You haven't set your top 5 yet — coming soon."
+                ? "You haven't set your top 5 yet."
                 : `${profile.username} hasn't set a top 5 yet.`
             }}
           </p>
+          <router-link v-if="isOwnProfile" to="/settings" class="btn"
+            >Set your top 5</router-link
+          >
+        </div>
+
+        <div v-else class="top-five-grid">
+          <router-link
+            v-for="item in profile.topFive"
+            :key="item.media_id"
+            :to="`/${item.type}/${item.external_id}`"
+            class="top-five-item"
+          >
+            <div class="top-five-rank">#{{ item.rank }}</div>
+            <div
+              class="top-five-poster"
+              :style="
+                item.poster_url
+                  ? { backgroundImage: `url(${item.poster_url})` }
+                  : {}
+              "
+            ></div>
+            <div class="top-five-title">{{ item.title }}</div>
+          </router-link>
         </div>
       </section>
     </div>
@@ -483,6 +510,51 @@ watch(() => route.params.username, loadProfile, { immediate: true });
   }
   .section {
     padding: 28px 24px;
+  }
+}
+
+.top-five-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+.top-five-item {
+  position: relative;
+  text-decoration: none;
+  color: var(--text);
+}
+.top-five-rank {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(11, 13, 18, 0.85);
+  color: var(--amber);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  z-index: 1;
+}
+.top-five-poster {
+  width: 100%;
+  aspect-ratio: 2/3;
+  border-radius: 10px;
+  background-color: var(--navy);
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 6px;
+}
+.top-five-title {
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .top-five-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 </style>

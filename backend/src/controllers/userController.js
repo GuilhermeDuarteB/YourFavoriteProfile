@@ -6,6 +6,7 @@ import {
 } from "../models/userModel.js";
 import { getReviewsByUser, getGenreBreakdown } from "../models/reviewModel.js";
 import { getFollowCounts, isFollowing } from "../models/followModel.js";
+import { getTopFiveByUser } from "../models/topFiveModel.js";
 
 export async function getPublicProfile(req, res) {
   try {
@@ -17,10 +18,11 @@ export async function getPublicProfile(req, res) {
       ? await isFollowing(req.userId, user.id)
       : false;
 
-    const [stats, recentReviews, genreBreakdown] = await Promise.all([
+    const [stats, recentReviews, genreBreakdown, topFive] = await Promise.all([
       getUserStats(user.id),
       getReviewsByUser(user.id),
       getGenreBreakdown(user.id),
+      getTopFiveByUser(user.id),
     ]);
 
     res.json({
@@ -34,6 +36,7 @@ export async function getPublicProfile(req, res) {
       topFive: [],
       followCounts,
       viewerFollows,
+      topFive,
     });
   } catch (err) {
     console.error(err);

@@ -10,6 +10,7 @@ import NotFoundView from "../views/NotFoundView.vue";
 import Browse from "../views/BrowseView.vue";
 import MediaDetailsView from "../views/MediaDetailsView.vue";
 import SettingsView from "../views/SettingsView.vue";
+import WatchlistView from "../views/WatchlistView.vue";
 
 const routes = [
   { path: "/", name: "home", component: HomeView },
@@ -38,10 +39,30 @@ const routes = [
   { path: "/series/:id", name: "series-detail", component: MediaDetailsView },
   { path: "/game/:id", name: "game-detail", component: MediaDetailsView },
 
-  { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
+  {
+    path: "/settings",
+    name: "settings",
+    component: SettingsView,
+    meta: { requiresAuth: true },
+  },
   { path: "/:username", name: "profile", component: ProfileView },
 
   { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundView },
+  {
+    path: "/:username/watchlist",
+    name: "user-watchlist",
+    component: WatchlistView,
+  },
+  {
+    path: "/watchlist",
+    redirect: () => {
+      const authStore = useAuthStore();
+      return authStore.user
+        ? `/${authStore.user.username}/watchlist`
+        : "/login";
+    },
+  },
+  { path: "/:username", name: "profile", component: ProfileView },
 ];
 
 const router = createRouter({

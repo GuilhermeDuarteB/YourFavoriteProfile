@@ -18,9 +18,12 @@ const authStore = useAuthStore();
       <router-link to="/movies">Movies</router-link>
       <router-link to="/series">Series</router-link>
       <router-link to="/games">Games</router-link>
-      <label v-if="authStore.isAuthenticated">
-        <router-link to="/watchlist">Watchlist</router-link>
-      </label>
+      <router-link
+        v-if="authStore.isAuthenticated"
+        :to="`/${authStore.user.username}/watchlist`"
+      >
+        Watchlist
+      </router-link>
       <label v-if="authStore.isAuthenticated">
         <router-link to="/settings" class="settings-link">⚙</router-link>
       </label>

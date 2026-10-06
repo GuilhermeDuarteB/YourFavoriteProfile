@@ -7,6 +7,10 @@ import {
   updateReview,
   findExistingReview,
 } from "../models/reviewModel.js";
+import {
+  addToWatchlist,
+  findWatchlistEntry,
+} from "../models/watchlistModel.js";
 
 export async function postReview(req, res) {
   try {
@@ -36,12 +40,9 @@ export async function postReview(req, res) {
 
     const existing = await findExistingReview({ userId, mediaId, episodeId });
     if (existing) {
-      return res
-        .status(409)
-        .json({
-          error:
-            "You already reviewed this — edit your existing review instead.",
-        });
+      return res.status(409).json({
+        error: "You already reviewed this — edit your existing review instead.",
+      });
     }
 
     const review = await createReview({
@@ -51,6 +52,14 @@ export async function postReview(req, res) {
       score,
       comment,
     });
+
+    if (mediaId) {
+      const existingEntry = await findWatchlistEntry(userId, mediaId);
+      if (existingEntry && existingEntry.status !== "completed") {
+        await addToWatchlist(userId, mediaId, "completed");
+      }
+    }
+
     res.status(201).json(review);
   } catch (err) {
     console.error(err);

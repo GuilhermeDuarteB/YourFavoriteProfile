@@ -16,6 +16,39 @@ const route = useRoute();
 const detail = ref(null);
 const loading = ref(true);
 const error = ref("");
+const watchlistStatus = ref(null);
+const watchlistLoading = ref(false);
+
+async function checkWatchlistStatus() {
+  if (!authStore.isAuthenticated || !detail.value?.mediaId) return;
+  try {
+    const res = await api.get(`/watchlist/${detail.value.mediaId}`);
+    watchlistStatus.value = res.data.inWatchlist ? res.data.status : null;
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function toggleWatchlist() {
+  if (!authStore.isAuthenticated) return;
+  watchlistLoading.value = true;
+  try {
+    if (watchlistStatus.value) {
+      await api.delete(`/watchlist/${detail.value.mediaId}`);
+      watchlistStatus.value = null;
+    } else {
+      await api.post("/watchlist", {
+        mediaId: detail.value.mediaId,
+        status: "want_to_watch",
+      });
+      watchlistStatus.value = "want_to_watch";
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    watchlistLoading.value = false;
+  }
+}
 
 const myReview = computed(
   () => reviews.value.find((r) => r.user_id === authStore.user?.id) || null,
@@ -36,6 +69,7 @@ async function loadDetail() {
     const res = await api.get(`/media/${type}/${route.params.id}`);
     detail.value = res.data;
     await loadReviews();
+    await checkWatchlistStatus();
   } catch (err) {
     error.value = "Could not load this title.";
   } finally {
@@ -123,7 +157,14 @@ watch(() => route.params.id, loadDetail, { immediate: true });
               >
                 Log in to review
               </button>
-              <button class="btn">Add to watchlist</button>
+              <button
+                class="btn"
+                :class="{ 'btn-active': watchlistStatus }"
+                :disabled="watchlistLoading || !authStore.isAuthenticated"
+                @click="toggleWatchlist"
+              >
+                {{ watchlistStatus ? "✓ In watchlist" : "Add to watchlist" }}
+              </button>
             </div>
           </div>
         </div>
@@ -372,5 +413,11 @@ watch(() => route.params.id, loadDetail, { immediate: true });
   .detail-body {
     padding: 24px;
   }
+}
+
+.btn-active {
+  background: rgba(47, 91, 255, 0.15);
+  border-color: var(--blue);
+  color: var(--blue);
 }
 </style>
