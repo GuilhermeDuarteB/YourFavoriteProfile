@@ -93,7 +93,7 @@ watch(query, async (q, previousQuery, onCleanup) => {
 </template>
 
 <style scoped>
-.search-results { padding: 32px 56px 48px; }
+.search-results { padding: 32px 56px 48px; min-width: 0; }
 h1 { margin-bottom: 12px; }
 h2 { font-size: 20px; margin-bottom: 20px; }
 section { margin-top: 32px; }
@@ -101,7 +101,7 @@ section { margin-top: 32px; }
 .state-message { padding: 24px 0; }
 .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px; }
 .users-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
-.user-card { display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; color: var(--text); }
+.user-card { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; color: var(--text); }
 .user-card:hover { border-color: var(--blue); }
 .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--navy); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 @media (max-width: 768px) {

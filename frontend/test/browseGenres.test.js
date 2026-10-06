@@ -8,11 +8,11 @@ const gameGenres = ["action", "adventure", "rpg", "strategy", "shooter", "puzzle
 const combinations = [
   [["movie"], ["action", "drama", "comedy", "scifi", "horror"]],
   [["series"], ["action", "drama", "comedy", "scifi"]],
-  [["movie", "series"], ["action", "drama", "comedy", "scifi"]],
+  [["movie", "series"], ["action", "drama", "comedy", "scifi", "horror"]],
   [["game"], gameGenres],
-  [["game", "movie"], ["action"]],
-  [["game", "series"], ["action"]],
-  [["movie", "series", "game"], ["action"]],
+  [["game", "movie"], ["action", "drama", "comedy", "scifi", "horror", ...gameGenres.slice(1)]],
+  [["game", "series"], ["action", "drama", "comedy", "scifi", ...gameGenres.slice(1)]],
+  [["movie", "series", "game"], ["action", "drama", "comedy", "scifi", "horror", ...gameGenres.slice(1)]],
 ];
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 const debounce = () => new Promise((resolve) => setTimeout(resolve, 240));
@@ -66,18 +66,18 @@ test("clicking Movies or Series from All selects that type instead of leaving Ga
   }
 });
 
-test("pills still build mixed selections and reset incompatible genres", async () => {
+test("pills build mixed selections and reset only when a genre is unsupported", async () => {
   const browse = mountBrowse({ types: "movie", genre: "horror" });
   try {
     browse.state.toggleType("series");
     assert.deepEqual([...browse.state.selectedTypes.value], ["movie", "series"]);
-    assert.equal(browse.state.selectedGenre.value, "all");
+    assert.equal(browse.state.selectedGenre.value, "horror");
     browse.state.selectedGenre.value = "drama";
     browse.state.toggleType("game");
-    assert.equal(browse.state.selectedGenre.value, "all");
-    assert.deepEqual(browse.state.genreOptions.value.map((g) => g.value), ["action"]);
+    assert.equal(browse.state.selectedGenre.value, "drama");
+    assert.ok(browse.state.genreOptions.value.some((g) => g.value === "rpg"));
     await nextTick(); await debounce();
-    assert.equal(browse.route.query.genre, undefined);
+    assert.equal(browse.route.query.genre, "drama");
     assert.equal(browse.route.query.types, "movie,series,game");
   } finally { browse.stop(); }
   const invalid = mountBrowse({ types: "series", genre: "horror" });

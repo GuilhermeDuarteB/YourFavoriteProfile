@@ -246,4 +246,9 @@ watch(activeStatus, loadWatchlist);
   border-radius: 6px;
   cursor: pointer;
 }
+@media (max-width: 768px) {
+  .watchlist-page { padding: 32px 24px; }
+  .watchlist-page h1 { font-size: 22px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 14px; }
+}
 </style>

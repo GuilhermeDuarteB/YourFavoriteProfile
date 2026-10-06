@@ -1,153 +1,189 @@
-# YourFavoriteProfile
+# Your Favorite Profile
 
-> 🚧 **Status: In Development** — core features are live and working; more are being added regularly.
+Your Favorite Profile is a full-stack media discovery and community application for movies, TV series, and games. Users can discover titles, write reviews, build a public profile, follow other users, manage a watchlist, and curate a personal Top 5.
 
-A full-stack review platform for movies, TV series, and games, with public, searchable user profiles. The key feature: for TV series, users review episode by episode, and the overall series rating is calculated automatically as the average of every episode reviewed — instead of guessing what an entire show "deserves" after finishing it.
+The product's differentiator is episode-by-episode TV reviewing with an automatically calculated series score. The browsing and media foundation is live; the complete episode review and aggregate scoring workflow is still in development.
 
-## 📸 Screenshots
+## Screenshots
 
-<!-- Replace with real screenshots once uploaded to docs/screenshots/ -->
 | Home | Browse |
-|---|---|
-| ![Home page with trending posters](docs/screenshots/home.png) | ![Browse page with filters and results](docs/screenshots/browse.png) |
+| --- | --- |
+| ![Home](docs/screenshots/home.png) | ![Browse](docs/screenshots/browse.png) |
 
-| Media Detail & Review | Profile |
-|---|---|
-| ![Media detail page with review modal open](docs/screenshots/media-detail.png) | ![User profile with stats and recent reviews](docs/screenshots/profile.png) |
+| Media detail | Public profile |
+| --- | --- |
+| ![Media detail](docs/screenshots/media-detail.png) | ![Profile](docs/screenshots/profile.png) |
 
-## ✨ Features
+## Current features
 
-**Live**
-- JWT authentication (register/login) with bcrypt password hashing
-- Public, searchable user profiles (`/username`) with stats, bio, and recent reviews
-- Browse and discover movies, series, and games with filters (type, genre, minimum rating, sort), live debounced search, and pagination — all synced to the URL
-- Real-time data from the TMDB and RAWG APIs, with graceful degradation if one provider goes down
-- Media detail pages (synopsis, cast, seasons, platforms) that auto-import into the local database on first view
-- Full review system: star ratings (0–5, stored as 0–10), optional comments, one review per user per title, edit/delete your own reviews
-- Rate limiting on auth and media routes, plus basic failed-login logging
+- Registration and login with JWT authentication and bcrypt password hashing
+- Public profiles with reviews, Top 5, genre radar, follower counts, and follow/unfollow
+- User search and global navbar search across users and media
+- Browse and discover for movies, series, and games with URL-synchronised type, genre, decade, rating, sort, and text filters
+- Provider-aware genre filtering: TMDB and RAWG taxonomies are mapped separately, including mixed and All types Browse selections
+- Watchlist statuses (want to watch, watching, completed, and dropped), including watchlist-only Browse filtering
+- Media detail pages with provider metadata, cast, seasons, platforms, reviews, and watchlist actions
+- Review create, update, delete, and score validation
+- TMDB and RAWG integrations with normalized media cards and partial-provider failure handling
+- Responsive public UI, API rate limiting, CORS configuration, and startup environment/database checks
 
-**Planned**
-- Episode-by-episode reviews with automatic series rating calculation
-- Watchlist (want to watch / watching / completed / dropped)
-- Personal top 5
-- Follow other users
-- Account settings (change email, delete account)
-- Avatar upload
+## In development and roadmap
 
-## 🛠️ Tech Stack
+- Complete episode-by-episode review flow and automatic series scoring
+- Persisting and displaying episode reviews in the series experience
+- Production deployment and operational monitoring
+- Database integrity improvements (constraints and indexes) planned separately
+- Avatar uploads and broader automated UI coverage
 
-**Frontend**
-- Vue 3 (Composition API, `<script setup>`)
-- Vite
-- Pinia (state management)
-- Vue Router
-- Axios
+## Tech stack
 
-**Backend**
-- Node.js
-- Express
-- PostgreSQL
-- JWT (authentication)
-- bcrypt (password hashing)
-- express-rate-limit
+Frontend: Vue 3, Vite, Pinia, Vue Router, and Axios.
 
-**External APIs**
-- [TMDB (The Movie Database)](https://www.themoviedb.org/) — movies and TV series data
-- [RAWG](https://rawg.io/apidocs) — games data
+Backend: Node.js, Express, PostgreSQL, JWT, bcrypt, and express-rate-limit.
 
-## 📂 Project Structure
+External APIs: [TMDB](https://www.themoviedb.org/) for movies and series, and [RAWG](https://rawg.io/apidocs) for games.
 
+Testing uses Node's built-in `node:test` runner. GitHub Actions runs both suites and the frontend production build.
+
+## Architecture
+
+```text
+Vue frontend
+    ↓ Axios REST calls
+Express API controllers
+    ↓
+Services (TMDB / RAWG) + PostgreSQL models
+    ↓
+Normalized media, user, review, follow, watchlist, and Top 5 data
 ```
+
+The provider services normalize external responses into a shared media-card and detail shape. PostgreSQL stores users and user-created data while TMDB and RAWG remain the source of external catalogue data.
+
+## Project structure
+
+```text
 YourFavoriteProfile/
 ├── backend/
 │   ├── src/
-│   │   ├── config/       # Database connection setup
-│   │   ├── controllers/  # Request handling logic
-│   │   ├── middleware/   # Auth, rate limiting
-│   │   ├── models/       # Database queries
-│   │   ├── routes/       # API endpoints
-│   │   ├── services/     # TMDB / RAWG API clients
-│   │   └── app.js
-│   ├── db/
-│   │   └── schema.sql    # Full database schema
+│   │   ├── config/          # Environment and PostgreSQL setup
+│   │   ├── controllers/     # HTTP request handlers
+│   │   ├── middleware/      # Auth, optional auth, and rate limits
+│   │   ├── models/          # Parameterized PostgreSQL queries
+│   │   ├── routes/          # REST route definitions
+│   │   ├── services/        # TMDB and RAWG clients
+│   │   └── utils/           # Shared validation helpers
+│   ├── test/                # Backend regression tests
 │   └── server.js
 ├── frontend/
-│   └── src/
-│       ├── api/          # Axios instance
-│       ├── components/   # Reusable UI (MediaCard, Modal, StarRating, etc.)
-│       ├── router/
-│       ├── stores/        # Pinia stores
-│       └── views/         # Pages
-└── README.md
+│   ├── src/
+│   │   ├── api/             # Axios client
+│   │   ├── components/      # Shared UI components
+│   │   ├── constants/       # Provider-aware genre definitions
+│   │   ├── router/          # Routes and auth guards
+│   │   ├── stores/          # Pinia stores
+│   │   └── views/           # Application pages
+│   └── test/                # Frontend behavior/regression tests
+├── docs/screenshots/
+├── YFP-Db.sql               # PostgreSQL schema
+└── .github/workflows/ci.yml
 ```
 
-## 🚀 Getting Started
+## Local development
 
-### Prerequisites
-- Node.js
-- PostgreSQL
-- A free [TMDB API key](https://www.themoviedb.org/settings/api)
-- A free [RAWG API key](https://rawg.io/apidocs)
+Requirements: Node.js 22+, Yarn 1.22+, PostgreSQL, a TMDB API key, and a RAWG API key.
 
 ### Database
 
+Create a PostgreSQL database, then apply the schema from the project root:
+
 ```bash
-createdb review_app
-psql -U postgres -d review_app -f backend/db/schema.sql
+createdb your_favorite_profile
+psql -U postgres -d your_favorite_profile -f YFP-Db.sql
 ```
 
 ### Backend
 
 ```bash
 cd backend
-npm install
+yarn install
+copy .env.example .env     # PowerShell; use cp on macOS/Linux
+yarn dev
 ```
 
-Create a `.env` file in `backend/`:
-
-```env
-PORT=3000
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/review_app
-JWT_SECRET=your_random_secret_here
-TMDB_API_KEY=your_tmdb_key
-RAWG_API_KEY=your_rawg_key
-```
-
-```bash
-npm run dev
-```
+The API listens on `http://localhost:3000` by default. `yarn start` runs the production server entry point.
 
 ### Frontend
 
 ```bash
 cd frontend
-npm install
-npm run dev
+yarn install
+copy .env.example .env     # PowerShell; use cp on macOS/Linux
+yarn dev
 ```
 
-The app runs on `http://localhost:5173` (frontend) and `http://localhost:3000` (backend API).
+The Vite development server listens on `http://localhost:5173` by default.
 
-## 🗺️ Roadmap
+## Environment variables
 
-- [x] Backend authentication (register/login)
-- [x] Database schema (users, media, seasons, episodes, reviews, watchlist, top_five)
-- [x] TMDB + RAWG integration
-- [x] Browse/discover with filters, search, and pagination
-- [x] Media detail pages
-- [x] Movie/series/game review system
-- [x] User profile pages with stats
-- [x] Rate limiting & basic security hardening
-- [ ] Episode-based review system + automatic series rating
-- [ ] Watchlist
-- [ ] Personal top 5
-- [ ] Follow system
-- [ ] Account settings
-- [ ] Deployment
+Backend (`backend/.env`):
 
-## 📄 License
+| Variable | Required | Description |
+| --- | --- | --- |
+| `DATABASE_URL` | Yes | PostgreSQL connection URL |
+| `JWT_SECRET` | Yes | Secret used to sign session tokens |
+| `TMDB_API_KEY` | Yes | TMDB API key |
+| `RAWG_API_KEY` | Yes | RAWG API key |
+| `PORT` | No | HTTP port, default `3000` |
+| `FRONTEND_URL` | No | Allowed frontend origin, default `http://localhost:5173` |
 
-TBD
+Frontend (`frontend/.env`):
 
----
+| Variable | Required | Description |
+| --- | --- | --- |
+| `VITE_API_URL` | No | API base URL, default `http://localhost:3000/api` |
 
-*This project is being developed as part of a personal portfolio.*
+The committed `.env.example` files contain variable names and safe local defaults only. Never put provider secrets in frontend environment files.
+
+## Testing and builds
+
+Run each suite from its package directory:
+
+```bash
+cd backend
+yarn test
+yarn test:watch
+
+cd ../frontend
+yarn test
+yarn test:watch
+yarn build
+```
+
+The production frontend output is written to `frontend/dist/`. CI runs dependency installation, both test suites, and this build on every push and pull request.
+
+## API areas
+
+The REST API is grouped under `/api`:
+
+- `/api/auth` — registration, login, and account changes
+- `/api/users` — public profiles and user search
+- `/api/media` — trending, latest episodes, discover/search, and details
+- `/api/reviews` — media and episode review operations
+- `/api/follow` — follow and unfollow
+- `/api/watchlist` — authenticated watchlist operations
+- `/api/top-five` — personal Top 5 operations
+
+## Reliability and security
+
+Passwords are hashed with bcrypt, protected routes use JWT middleware, PostgreSQL queries are parameterized, and auth/media routes are rate limited. CORS is restricted through `FRONTEND_URL`. External API calls have bounded timeouts and independent provider failures produce partial results where possible.
+
+## Known limitations
+
+- External provider search and the authenticated watchlist-only Browse view are bounded by provider pagination; Browse communicates when it has scanned a limited result window.
+- Episode-by-episode reviews and automatic series scoring remain in development.
+- The current frontend stores the JWT in browser local storage, so deployments should use an appropriate HTTPS origin and browser security policy.
+- No license is declared for this repository yet.
+
+## Author
+
+Your Favorite Profile is a portfolio project built to explore full-stack media data, community features, and provider-aware normalization.

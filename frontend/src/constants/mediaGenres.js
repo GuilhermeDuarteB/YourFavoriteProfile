@@ -17,9 +17,20 @@ const GENRES_BY_TYPE = {
 
 export function getGenreOptions(types) {
   if (!types.length) return [];
-  return (GENRES_BY_TYPE[types[0]] || [])
-    .filter(([value]) => types.every((type) =>
-      GENRES_BY_TYPE[type]?.some(([key]) => key === value),
-    ))
+
+  // A mixed Browse selection is a union of the genres supported by its
+  // providers. The backend applies a selected genre only to the providers
+  // that can represent it, so a useful option is not lost just because
+  // another selected provider has a different taxonomy.
+  const selected = new Set(types);
+  const seen = new Set();
+  return ["movie", "series", "game"]
+    .filter((type) => selected.has(type))
+    .flatMap((type) => GENRES_BY_TYPE[type] || [])
+    .filter(([value]) => {
+      if (seen.has(value)) return false;
+      seen.add(value);
+      return true;
+    })
     .map(([value, label]) => ({ value, label }));
 }

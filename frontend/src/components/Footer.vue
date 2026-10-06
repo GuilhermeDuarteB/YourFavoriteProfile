@@ -14,7 +14,7 @@ const authStore = useAuthStore();
         </div>
         Your Favorite Profile
       </router-link>
-      <p class="tagline">Rate every episode. Get the real series score.</p>
+      <p class="tagline">Discover, review, and share your favorite media.</p>
     </div>
 
     <div class="footer-columns">
@@ -49,7 +49,7 @@ const authStore = useAuthStore();
         </a>
         <a
           href="https://www.linkedin.com/in/guilhermbranco"
-          target="_blacnk"
+          target="_blank"
           rel="noopener"
           >Linkedin
         </a>

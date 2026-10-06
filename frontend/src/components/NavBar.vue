@@ -152,4 +152,18 @@ nav {
   border-color: var(--blue);
   color: #fff;
 }
+@media (max-width: 1100px) {
+  nav { flex-wrap: wrap; gap: 14px; padding: 16px 24px; }
+  .nav-links { order: 3; width: 100%; gap: 20px; overflow-x: auto; padding-bottom: 2px; }
+  .nav-right { flex: 1; justify-content: flex-end; gap: 10px; min-width: 0; }
+  .search-pill { width: min(220px, 35vw); }
+}
+@media (max-width: 620px) {
+  nav { padding: 14px 16px; }
+  .brand { font-size: 16px; }
+  .nav-right { width: 100%; order: 2; justify-content: stretch; }
+  .search-pill { width: auto; flex: 1; min-width: 0; }
+  .nav-links { order: 3; gap: 16px; font-size: 13px; }
+  .btn { padding: 8px 12px; }
+}
 </style>

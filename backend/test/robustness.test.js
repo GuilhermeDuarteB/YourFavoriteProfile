@@ -9,6 +9,8 @@ import { pools } from "../src/config/db.js";
 import { register, login, updateEmail, updateUsernameHandler, deleteAccount } from "../src/controllers/authController.js";
 import { postReview, putReview } from "../src/controllers/reviewController.js";
 import { putTopFive } from "../src/controllers/topFiveController.js";
+import { postFollow } from "../src/controllers/followController.js";
+import { postWatchlist, getMyWatchlist } from "../src/controllers/watchlistController.js";
 import { authMiddleware } from "../src/middleware/auth.js";
 import { optionalAuth } from "../src/middleware/optionalAuth.js";
 import { validateEnvironment } from "../src/config/env.js";
@@ -140,6 +142,21 @@ test("top five keeps the transaction and rolls back unknown media IDs", async ()
   } finally { pools.connect = connect; }
 });
 
+test("follow rejects self-targets and watchlist rejects invalid statuses", async () => {
+  pools.query = async () => ({ rows: [{ id: 1, username: "alice" }] });
+  let res = response();
+  await postFollow({ userId: 1, params: { username: "alice" } }, res);
+  assert.equal(res.statusCode, 400);
+
+  pools.query = () => assert.fail("Invalid watchlist status reached the database");
+  res = response();
+  await postWatchlist({ userId: 1, body: { mediaId: 1, status: "queued" } }, res);
+  assert.equal(res.statusCode, 400);
+  res = response();
+  await getMyWatchlist({ userId: 1, query: { status: "queued" } }, res);
+  assert.equal(res.statusCode, 400);
+});
+
 test("JWT failures have a machine-readable code; optional profiles remain public", () => {
   process.env.JWT_SECRET = "test-only-secret";
   for (const token of ["invalid", jwt.sign({ userId: 1 }, process.env.JWT_SECRET, { expiresIn: -1 }),
@@ -173,7 +190,8 @@ test("all supported game genres reach RAWG distinctly, for discovery and text se
     assert.equal(calls.at(-1).params.genres, RAWG_GENRE_SLUGS[value]);
   }
   assert.equal(new Set(calls.map((call) => call.params.genres)).size, 12);
-  assert.deepEqual(getGenreOptions(["movie", "series", "game"]).map((g) => g.value), ["action"]);
+  assert.ok(getGenreOptions(["movie", "series", "game"]).some((g) => g.value === "drama"));
+  assert.ok(getGenreOptions(["movie", "series", "game"]).some((g) => g.value === "rpg"));
   assert.equal(getGenreOptions(["series"]).some((g) => g.value === "horror"), false);
   const { getDiscover } = await import("../src/controllers/mediaController.js");
   let res = response();
@@ -182,8 +200,9 @@ test("all supported game genres reach RAWG distinctly, for discovery and text se
   res = response();
   const count = calls.length;
   await getDiscover({ query: { types: "game,movie", genre: "rpg" } }, res);
-  assert.equal(res.statusCode, 400);
-  assert.equal(calls.length, count);
+  assert.equal(res.statusCode, 200);
+  assert.equal(calls.length, count + 1);
+  assert.equal(calls.at(-1).url, "/games");
 });
 
 test("environment validation names missing variables and validates defaults", () => {

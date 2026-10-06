@@ -318,6 +318,7 @@ watch(() => route.params.id, loadDetail, { immediate: true });
 .detail-actions {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .btn {
@@ -413,6 +414,11 @@ watch(() => route.params.id, loadDetail, { immediate: true });
   .detail-body {
     padding: 24px;
   }
+  .detail-info { width: 100%; }
+  .detail-info h1 { font-size: 26px; }
+  .detail-meta { flex-wrap: wrap; justify-content: center; }
+  .detail-actions { justify-content: center; }
+  .season-row { gap: 12px; flex-wrap: wrap; }
 }
 
 .btn-active {

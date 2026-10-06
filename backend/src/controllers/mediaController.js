@@ -170,17 +170,26 @@ export async function getDiscover(req, res) {
     const pageNum = Number.isFinite(requestedPage) ? Math.max(1, Math.floor(requestedPage)) : 1;
     const filters = { genre, decade, minRating: Number(minRating) || 0, sortBy };
     const searchQuery = String(query).trim();
-    const perType = Math.ceil(PAGE_SIZE / (selectedTypes.length || 1));
     const formatters = { movie: formatMovie, series: formatSeries, game: formatGame };
     const searchers = { movie: searchMovie, series: searchSeries, game: searchRawg };
     const warnings = [];
     const genreMappings = { movie: TMDB_MOVIES_GENRES, series: TMDB_TV_GENRES, game: RAWG_GENRE_SLUGS };
-    if (genre !== "all" && selectedTypes.some((type) => !Object.hasOwn(genreMappings[type], genre))) {
+    const applicableTypes = genre === "all"
+      ? selectedTypes
+      : selectedTypes.filter((type) => Object.hasOwn(genreMappings[type], genre));
+    if (genre !== "all" && applicableTypes.length === 0) {
       return res.status(400).json({ error: "Genre is not supported for the selected media types" });
     }
+    if (genre !== "all" && applicableTypes.length < selectedTypes.length) {
+      const excluded = selectedTypes
+        .filter((type) => !applicableTypes.includes(type))
+        .map((type) => type === "game" ? "games" : type === "series" ? "series" : "movies");
+      warnings.push(`${genre} is not available for ${excluded.join(" and ")}; those results were excluded.`);
+    }
+    const perType = Math.ceil(PAGE_SIZE / (applicableTypes.length || 1));
     if (searchQuery) warnings.push("Search filters and sorting apply to the first page of matches returned by each provider.");
 
-    const responses = await Promise.allSettled(selectedTypes.map(async (type) => {
+    const responses = await Promise.allSettled(applicableTypes.map(async (type) => {
       if (searchQuery) {
         const raw = await searchers[type](searchQuery, genre);
         return { results: filterSearch(raw, type, filters).map(formatters[type]), hasMore: false };
@@ -205,9 +214,9 @@ export async function getDiscover(req, res) {
         results.push(...response.value.results);
         hasMore ||= response.value.hasMore;
       } else {
-        const provider = selectedTypes[index] === "game" ? "RAWG" : "TMDB";
-        console.error(provider + " " + selectedTypes[index] + " discover/search failed:", response.reason.message);
-        warnings.push(provider + " " + selectedTypes[index] + " results are temporarily unavailable.");
+        const provider = applicableTypes[index] === "game" ? "RAWG" : "TMDB";
+        console.error(provider + " " + applicableTypes[index] + " discover/search failed:", response.reason.message);
+        warnings.push(provider + " " + applicableTypes[index] + " results are temporarily unavailable.");
       }
     });
     if (responses.length && responses.every((response) => response.status === "rejected")) {

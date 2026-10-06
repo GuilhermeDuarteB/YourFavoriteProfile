@@ -4,9 +4,12 @@
   "description": "",
   "main": "server.js",
   "type": "module",
+  "packageManager": "yarn@1.22.22",
   "scripts": {
     "dev": "nodemon server.js",
-    "test": "node --test"
+    "start": "node server.js",
+    "test": "node --test",
+    "test:watch": "node --test --watch"
   },
   "keywords": [],
   "author": "",

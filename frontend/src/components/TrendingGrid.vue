@@ -23,5 +23,9 @@ section { padding: 48px 56px; }
 .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 22px; }
 .section-head h2 { font-size: 22px; font-weight: 700; }
 .see-all { font-size: 13px; color: var(--blue); font-weight: 600; }
-.grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px; }
+@media (max-width: 768px) {
+  section { padding: 32px 24px; }
+  .grid { grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 14px; }
+}
 </style>

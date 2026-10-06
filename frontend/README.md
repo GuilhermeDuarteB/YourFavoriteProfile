@@ -1,5 +1,12 @@
-# Vue 3 + Vite
+# Frontend
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+The Vue 3 application lives in `src/`. See the repository root [README](../README.md) for setup, environment variables, architecture, testing, and deployment notes.
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+Run locally with Yarn:
+
+```bash
+yarn install
+yarn dev
+```
+
+Validate with `yarn test` and create a production bundle with `yarn build`.

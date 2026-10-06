@@ -84,7 +84,59 @@ test("Browse restores game genres and watchlist URLs, resets incompatible genres
     assert.equal(state.selectedGenre.value, "racing");
     assert.equal(calls.at(-1).params.genre, "racing");
     state.selectedTypes.value = ["movie", "series", "game"];
-    assert.deepEqual(state.genreOptions.value.map((option) => option.value), ["action"]);
-    assert.equal(state.selectedGenre.value, "all");
+    assert.ok(state.genreOptions.value.some((option) => option.value === "drama"));
+    assert.ok(state.genreOptions.value.some((option) => option.value === "rpg"));
+    assert.equal(state.selectedGenre.value, "racing");
   } finally { unmount(); scope.stop(); }
+});
+
+test("navbar search trims queries and ignores empty submissions", () => {
+  const route = reactive({ query: {} });
+  const pushed = [];
+  const source = stripImports(read("../src/components/NavBar.vue").match(/<script setup>([\s\S]*?)<\/script>/)[1]);
+  const state = new Function("ref", "watch", "useRoute", "useRouter", "useAuthStore", source + "\nreturn { searchQuery, search };")(
+    ref, watch, () => route, () => ({ push: (value) => pushed.push(value) }), () => ({ isAuthenticated: false }),
+  );
+  state.searchQuery.value = "  dune  ";
+  state.search();
+  assert.deepEqual(pushed, [{ name: "search", query: { q: "dune" } }]);
+  state.searchQuery.value = "   ";
+  state.search();
+  assert.equal(pushed.length, 1);
+});
+
+test("FollowButton emits its changed state only after a successful request", async () => {
+  const calls = [];
+  let changed;
+  const source = stripImports(read("../src/components/FollowButton.vue").match(/<script setup>([\s\S]*?)<\/script>/)[1]);
+  const state = new Function("ref", "watch", "defineProps", "defineEmits", "api", source + "\nreturn { following, toggle };")(
+    ref, watch, () => ({ username: "alice", initialFollowing: false }), () => (event, value) => { if (event === "changed") changed = value; },
+    { post: async (url) => { calls.push(url); }, delete: async () => { throw new Error("failed"); } },
+  );
+  await state.toggle();
+  assert.equal(state.following.value, true);
+  assert.equal(changed, true);
+  const originalError = console.error;
+  console.error = () => {};
+  await state.toggle();
+  console.error = originalError;
+  assert.equal(state.following.value, true);
+  assert.deepEqual(calls, ["/follow/alice"]);
+});
+
+test("SearchView reads the route query and loads media and user results", async () => {
+  const route = reactive({ query: { q: "  dune " } });
+  const calls = [];
+  const source = stripImports(read("../src/views/SearchView.vue").match(/<script setup>([\s\S]*?)<\/script>/)[1]);
+  const scope = effectScope();
+  const state = scope.run(() => new Function("computed", "ref", "watch", "useRoute", "api", source + "\nreturn { query, media, users, loading };")(
+    computed, ref, watch, () => route,
+    { get: async (url, options) => { calls.push({ url, options }); return { data: url.includes("discover") ? { results: [{ id: 1 }], warnings: [] } : [{ id: 2 }] }; } },
+  ));
+  await settle();
+  assert.equal(state.query.value, "dune");
+  assert.deepEqual(calls.map((call) => call.url).sort(), ["/media/discover", "/users/search"]);
+  assert.equal(state.media.value.length, 1);
+  assert.equal(state.users.value.length, 1);
+  scope.stop();
 });
