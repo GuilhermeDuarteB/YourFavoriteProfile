@@ -1,3 +1,4 @@
+import { validateReview } from "../utils/validation.js";
 import {
   createReview,
   getReviewsByMedia,
@@ -14,7 +15,7 @@ import {
 
 export async function postReview(req, res) {
   try {
-    const { mediaId, episodeId, score, comment } = req.body;
+    const { mediaId, episodeId, score, comment } = req.body || {};
     const userId = req.userId;
 
     if (!mediaId && !episodeId) {
@@ -27,16 +28,8 @@ export async function postReview(req, res) {
         .status(400)
         .json({ error: "Provide either mediaId or episodeId, not both" });
     }
-    if (
-      score === undefined ||
-      typeof score !== "number" ||
-      score < 0 ||
-      score > 10
-    ) {
-      return res
-        .status(400)
-        .json({ error: "Score must be a number between 0 and 10" });
-    }
+    const validationError = validateReview(score, comment);
+    if (validationError) return res.status(400).json({ error: validationError });
 
     const existing = await findExistingReview({ userId, mediaId, episodeId });
     if (existing) {
@@ -89,6 +82,9 @@ export async function getEpisodeReviews(req, res) {
 
 export async function putReview(req, res) {
   try {
+    const { score, comment } = req.body || {};
+    const validationError = validateReview(score, comment);
+    if (validationError) return res.status(400).json({ error: validationError });
     const reviews = await findReviewById(req.params.id);
     if (!reviews) return res.status(404).json({ error: "Review not found" });
     if (reviews.user_id !== req.userId) {
@@ -97,8 +93,7 @@ export async function putReview(req, res) {
         .json({ error: "You can only edit your own reviews" });
     }
 
-    const { score, comment } = req.body;
-    const updated = await updateReview(req.params.id, { score, comment });
+    const updated = await updateReview(req.params.id, { score, comment: comment ?? null });
     res.json(updated);
   } catch (err) {
     console.error(err);

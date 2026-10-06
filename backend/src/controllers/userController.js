@@ -33,7 +33,6 @@ export async function getPublicProfile(req, res) {
       stats,
       recentReviews,
       genreBreakdown,
-      topFive: [],
       followCounts,
       viewerFollows,
       topFive,

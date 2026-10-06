@@ -6,6 +6,7 @@ const props = defineProps({
   username: String,
   initialFollowing: Boolean,
 });
+const emit = defineEmits(['changed']);
 
 const following = ref(props.initialFollowing);
 const loading = ref(false);
@@ -13,6 +14,7 @@ const loading = ref(false);
 watch(() => props.initialFollowing, (v) => (following.value = v));
 
 async function toggle() {
+  if (loading.value) return;
   loading.value = true;
   try {
     if (following.value) {
@@ -22,6 +24,7 @@ async function toggle() {
       await api.post(`/follow/${props.username}`);
       following.value = true;
     }
+    emit('changed', following.value);
   } catch (err) {
     console.error(err);
   } finally {

@@ -41,6 +41,12 @@ function formatDate(d) {
   });
 }
 
+function updateFollowing(following) {
+  if (profile.value.viewerFollows === following) return;
+  profile.value.viewerFollows = following;
+  profile.value.followCounts.followers += following ? 1 : -1;
+}
+
 watch(() => route.params.username, loadProfile, { immediate: true });
 </script>
 
@@ -122,7 +128,7 @@ watch(() => route.params.username, loadProfile, { immediate: true });
               v-else-if="authStore.isAuthenticated"
               :username="profile.username"
               :initial-following="profile.viewerFollows"
-              @changed="(v) => (profile.followCounts.followers += v ? 1 : -1)"
+              @changed="updateFollowing"
             />
           </div>
         </div>

@@ -1,10 +1,11 @@
 import { pools } from "../config/db.js";
+import { normalizeEmail } from "../utils/validation.js";
 
 //create user func
 export async function createUser({ username, email, passwordHash }) {
   const result = await pools.query(
     "INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email, created_at",
-    [username, email, passwordHash],
+    [username, normalizeEmail(email), passwordHash],
   );
   return result.rows[0];
 }
@@ -12,8 +13,8 @@ export async function createUser({ username, email, passwordHash }) {
 //find user email func
 
 export async function findUserByEmail(email) {
-  const result = await pools.query("SELECT * from users WHERE email = $1", [
-    email,
+  const result = await pools.query("SELECT * from users WHERE LOWER(TRIM(email)) = $1", [
+    normalizeEmail(email),
   ]);
   return result.rows[0];
 }
@@ -78,7 +79,7 @@ export async function updateUserProfile(userId, { bio, avatarUrl }) {
 export async function updateUserEmail(userId, newEmail) {
   const result = await pools.query(
     `UPDATE users SET email = $1 WHERE id = $2 RETURNING id, username, email`,
-    [newEmail, userId]
+    [normalizeEmail(newEmail), userId]
   );
   return result.rows[0];
 }

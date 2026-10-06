@@ -1,7 +1,21 @@
 <script setup>
+import { ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "../stores/authStore";
 
 const authStore = useAuthStore();
+const route = useRoute();
+const router = useRouter();
+const searchQuery = ref("");
+
+watch(() => route.query.q, (q) => {
+  searchQuery.value = typeof q === "string" ? q : "";
+}, { immediate: true });
+
+function search() {
+  const q = searchQuery.value.trim();
+  if (q) router.push({ name: "search", query: { q } });
+}
 </script>
 
 <template>
@@ -30,6 +44,9 @@ const authStore = useAuthStore();
     </div>
     <div class="nav-right">
       <input
+        v-model="searchQuery"
+        @keydown.enter.prevent="search"
+        aria-label="Search titles and users"
         class="search-pill"
         type="text"
         placeholder="Search titles, users..."

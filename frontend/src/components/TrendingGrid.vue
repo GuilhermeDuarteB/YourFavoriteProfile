@@ -10,7 +10,7 @@ defineProps({
   <section>
     <div class="section-head">
       <h2>Trending this week</h2>
-      <router-link to="/trending" class="see-all">See all →</router-link>
+      <router-link to="/browse" class="see-all">See all →</router-link>
     </div>
     <div class="grid">
       <MediaCard v-for="item in items" :key="item.title" v-bind="item" />

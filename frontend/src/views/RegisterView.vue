@@ -19,7 +19,7 @@ const loading = ref(false);
 async function handleSubmit() {
   error.value = "";
 
-  if (email.value !== confirmEmail.value) {
+  if (email.value.trim().toLowerCase() !== confirmEmail.value.trim().toLowerCase()) {
     error.value = "Emails don't match";
     return;
   }
@@ -92,6 +92,9 @@ async function handleSubmit() {
 
               <input
                 id="username"
+                minlength="3"
+                maxlength="50"
+                pattern="[a-zA-Z0-9_.]+"
                 v-model="username"
                 type="text"
                 placeholder="Choose a username"
@@ -184,6 +187,7 @@ async function handleSubmit() {
 
               <input
                 id="password"
+                minlength="8"
                 v-model="password"
                 type="password"
                 placeholder="Create a password"

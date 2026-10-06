@@ -24,7 +24,7 @@ defineProps({
           <div class="poster-meta">{{ poster.meta }}</div>
         </div>
       </div>
-      <div class="rating-chip" v-if="score">
+      <div class="rating-chip" v-if="score !== null && score !== undefined">
         <div class="rating-num">{{ score }}</div>
         <div class="rating-label">{{ scoreLabel }}</div>
       </div>

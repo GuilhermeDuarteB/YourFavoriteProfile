@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { normalizeEmail, validateUsername, validateEmail, validatePassword } from "../utils/validation.js";
 import {
   findUserById,
   updateUserEmail,
@@ -14,13 +15,10 @@ const SALT_ROUNDS = 10;
 
 export async function register(req, res) {
   try {
-    const { username, email, password } = req.body;
-
-    if (!username || !email || !password) {
-      return res
-        .status(400)
-        .json({ error: "Username, email, and password are required" });
-    }
+    const { username, password } = req.body || {};
+    const email = normalizeEmail(req.body?.email);
+    const validationError = validateUsername(username) || validateEmail(email) || validatePassword(password);
+    if (validationError) return res.status(400).json({ error: validationError });
 
     const existingUser = await findUserByEmail(email);
     if (existingUser) {
@@ -47,9 +45,10 @@ export async function register(req, res) {
 
 export async function login(req, res) {
   try {
-    const { email, password } = req.body;
+    const email = normalizeEmail(req.body?.email);
+    const { password } = req.body || {};
 
-    if (!email || !password) {
+    if (!email || typeof password !== "string" || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
@@ -81,14 +80,18 @@ export async function login(req, res) {
 
 export async function updateEmail(req, res) {
   try {
-    const { newEmail, password } = req.body;
-    if (!newEmail || !password) {
+    const newEmail = normalizeEmail(req.body?.newEmail);
+    const { password } = req.body || {};
+    if (!newEmail || typeof password !== "string" || !password) {
       return res
         .status(400)
         .json({ error: "New email and password are required" });
     }
 
+    const emailError = validateEmail(newEmail);
+    if (emailError) return res.status(400).json({ error: emailError });
     const user = await findUserById(req.userId, true);
+    if (!user) return res.status(401).json({ code: "INVALID_TOKEN", message: "Account no longer exists" });
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(401).json({ error: "Incorrect password" });
 
@@ -107,27 +110,17 @@ export async function updateEmail(req, res) {
 
 export async function updateUsernameHandler(req, res) {
   try {
-    const { newUsername, password } = req.body;
-    if (!newUsername || !password) {
+    const { newUsername, password } = req.body || {};
+    if (!newUsername || typeof password !== "string" || !password) {
       return res
         .status(400)
         .json({ error: "New username and password are required" });
     }
-    if (newUsername.length < 3 || newUsername.length > 50) {
-      return res
-        .status(400)
-        .json({ error: "Username must be between 3 and 50 characters" });
-    }
-    if (!/^[a-zA-Z0-9_.]+$/.test(newUsername)) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Username can only contain letters, numbers, dots, and underscores",
-        });
-    }
+    const usernameError = validateUsername(newUsername);
+    if (usernameError) return res.status(400).json({ error: usernameError });
 
     const user = await findUserById(req.userId, true);
+    if (!user) return res.status(401).json({ code: "INVALID_TOKEN", message: "Account no longer exists" });
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(401).json({ error: "Incorrect password" });
 
@@ -146,12 +139,13 @@ export async function updateUsernameHandler(req, res) {
 
 export async function deleteAccount(req, res) {
   try {
-    const { password } = req.body;
-    if (!password) {
+    const { password } = req.body || {};
+    if (typeof password !== "string" || !password) {
       return res.status(400).json({ error: "Password is required" });
     }
 
     const user = await findUserById(req.userId, true);
+    if (!user) return res.status(401).json({ code: "INVALID_TOKEN", message: "Account no longer exists" });
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(401).json({ error: "Incorrect password" });
 

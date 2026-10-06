@@ -1,9 +1,21 @@
  import {defineStore} from 'pinia';
  import api from '../api/axios';
 
+ function loadStoredUser() {
+   try {
+     const user = JSON.parse(localStorage.getItem('user'));
+     if (user && typeof user === 'object' && !Array.isArray(user) && typeof user.username === 'string' && user.username) return user;
+   } catch {
+     // Discard malformed or incomplete persisted sessions.
+   }
+   localStorage.removeItem('user');
+   localStorage.removeItem('token');
+   return null;
+ }
+
  export const useAuthStore = defineStore('auth', {
    state: () => ({
-     user: JSON.parse(localStorage.getItem('user')) || null,
+     user: loadStoredUser(),
      token: localStorage.getItem('token') || null,
    }),
    

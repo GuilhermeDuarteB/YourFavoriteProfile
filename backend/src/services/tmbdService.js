@@ -2,9 +2,9 @@ import axios from "axios";
 
 const tmdb = axios.create({
   baseURL: "https://api.themoviedb.org/3",
+  timeout: 5000,
   params: {
     api_key: process.env.TMDB_API_KEY,
-    timeout: 5000,
   },
 });
 
@@ -26,11 +26,19 @@ export async function getTrendingSeriesWithDetails() {
   const trendingRes = await tmdb.get("/trending/tv/week");
   const topSeries = trendingRes.data.results.slice(0, 4);
 
-  const detailed = await Promise.all(
+  const detailed = await Promise.allSettled(
     topSeries.map((series) => tmdb.get(`/tv/${series.id}`)),
   );
 
-  return detailed.map((res) => res.data);
+  detailed.forEach((result, index) => {
+    if (result.status === "rejected") {
+      console.error(`TMDB latest episode details failed (${topSeries[index].id}):`, result.reason.message);
+    }
+  });
+  if (detailed.length && detailed.every((result) => result.status === "rejected")) {
+    throw new Error("TMDB latest episode details unavailable");
+  }
+  return detailed.filter((result) => result.status === "fulfilled").map((result) => result.value.data);
 }
 
 //export tmdb GENRES
@@ -48,7 +56,6 @@ export const TMDB_TV_GENRES = {
   drama: 18,
   comedy: 35,
   scifi: 10765,
-  horror: 9648,
 };
 
 function buildDateRange(decade) {
@@ -66,7 +73,7 @@ function mapSortBy(sortBy, dateField) {
     case "release_date":
       return `${dateField}.desc`;
     case "title":
-      return "original_title.asc";
+      return dateField === "first_air_date" ? "name.asc" : "title.asc";
     default:
       return "popularity.desc";
   }

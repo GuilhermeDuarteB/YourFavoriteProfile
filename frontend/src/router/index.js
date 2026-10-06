@@ -45,9 +45,6 @@ const routes = [
     component: SettingsView,
     meta: { requiresAuth: true },
   },
-  { path: "/:username", name: "profile", component: ProfileView },
-
-  { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundView },
   {
     path: "/:username/watchlist",
     name: "user-watchlist",
@@ -63,6 +60,7 @@ const routes = [
     },
   },
   { path: "/:username", name: "profile", component: ProfileView },
+  { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundView },
 ];
 
 const router = createRouter({

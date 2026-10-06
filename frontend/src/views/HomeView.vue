@@ -14,12 +14,14 @@ const trending = ref([]);
 const latestEpisodes = ref([]);
 
 onMounted(async () => {
-  const [trendingRes, episodesRes] = await Promise.all([
+  const [trendingRes, episodesRes] = await Promise.allSettled([
     api.get("/media/trending"),
     api.get("/media/latest-episodes"),
   ]);
-  trending.value = trendingRes.data;
-  latestEpisodes.value = episodesRes.data;
+  if (trendingRes.status === "fulfilled") trending.value = trendingRes.value.data;
+  else console.error("Home trending failed:", trendingRes.reason);
+  if (episodesRes.status === "fulfilled") latestEpisodes.value = episodesRes.value.data;
+  else console.error("Home latest episodes failed:", episodesRes.reason);
 });
 
 const heroPosters = computed(() =>
@@ -51,7 +53,7 @@ const heroPosters = computed(() =>
             class="btn btn-primary btn-lg"
             >Create your account</router-link
           >
-          <router-link to="/trending" class="btn btn-browse btn-lg"
+          <router-link to="/browse" class="btn btn-browse btn-lg"
             >Browse trending</router-link
           >
         </div>
@@ -59,8 +61,6 @@ const heroPosters = computed(() =>
       <HeroVisual
         v-if="heroPosters.length"
         :posters="heroPosters"
-        :score="8.7"
-        score-label="avg. from 12 episodes"
       />
     </div>
 

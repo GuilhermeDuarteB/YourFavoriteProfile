@@ -132,7 +132,7 @@ watch(() => route.params.id, loadDetail, { immediate: true });
                 detail.releaseDate.slice(0, 4)
               }}</span>
               <span v-if="detail.developer">· {{ detail.developer }}</span>
-              <span v-if="detail.score" class="detail-score"
+              <span v-if="detail.score !== null && detail.score !== undefined" class="detail-score"
                 >★ {{ detail.score }}</span
               >
             </div>

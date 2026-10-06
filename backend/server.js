@@ -1,16 +1,28 @@
 import 'dotenv/config';
-import * as Sentry from '@sentry/node';
-import app from './src/app.js';
-import { pools } from './src/config/db.js';
+import { validateEnvironment } from './src/config/env.js';
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
+let pool;
+try {
+  const { port } = validateEnvironment();
+  const { pools } = await import('./src/config/db.js');
+  pool = pools;
   try {
-    const result = await pools.query('SELECT NOW()');
-    console.log('Database connected:', result.rows[0].now);
-  } catch (err) {
-    console.error('Error connecting to DB:', err.message);
+    await pool.query('SELECT 1');
+  } catch {
+    throw new Error('Database connection failed; check database availability and configuration');
   }
-});
+  const { default: app } = await import('./src/app.js');
+  try {
+    await new Promise((resolve, reject) => {
+      const server = app.listen(port, resolve);
+      server.once('error', reject);
+    });
+  } catch {
+    throw new Error('HTTP server failed to listen; check PORT and whether it is already in use');
+  }
+  console.log(`Server running on port ${port}`);
+} catch (err) {
+  console.error('Startup failed:', err.message);
+  process.exitCode = 1;
+  if (pool) await pool.end();
+}

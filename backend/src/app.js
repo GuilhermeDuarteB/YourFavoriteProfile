@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { getFrontendOrigin } from './config/env.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import mediaRoutes from './routes/mediaRoutes.js'
@@ -10,7 +11,7 @@ import watchlistRoutes from './routes/watchlistRoutes.js';
 import topFiveRoutes from './routes/topFiveRoutes.js';
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: getFrontendOrigin() }));
 app.use(express.json());
 
 app.use('/api/reviews', reviewRoutes);
