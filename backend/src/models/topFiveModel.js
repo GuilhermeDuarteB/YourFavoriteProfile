@@ -1,4 +1,4 @@
-import { pools } from '../config/db.js';
+import { pools } from "../config/db.js";
 
 export async function getTopFiveByUser(userId) {
   const result = await pools.query(
@@ -6,7 +6,7 @@ export async function getTopFiveByUser(userId) {
      FROM top_five t JOIN media m ON m.id = t.media_id
      WHERE t.user_id = $1
      ORDER BY t.rank ASC`,
-    [userId]
+    [userId],
   );
   return result.rows;
 }
@@ -17,19 +17,19 @@ export async function setTopFive(userId, items) {
   // items: [{ mediaId, rank }, ...] até 5
   const client = await pools.connect();
   try {
-    await client.query('BEGIN');
-    await client.query('DELETE FROM top_five WHERE user_id = $1', [userId]);
+    await client.query("BEGIN");
+    await client.query("DELETE FROM top_five WHERE user_id = $1", [userId]);
 
     for (const item of items) {
       await client.query(
         `INSERT INTO top_five (user_id, media_id, rank) VALUES ($1, $2, $3)`,
-        [userId, item.mediaId, item.rank]
+        [userId, item.mediaId, item.rank],
       );
     }
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
   } catch (err) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw err;
   } finally {
     client.release();

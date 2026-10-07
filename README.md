@@ -24,7 +24,7 @@ Movies and games use direct reviews. TV series are reviewed episode by episode t
 - Provider-aware genre filtering: TMDB and RAWG taxonomies are mapped separately, including mixed and All types Browse selections
 - Watchlist statuses (want to watch, watching, completed, and dropped), including watchlist-only Browse filtering
 - Media detail pages with provider metadata, cast, seasons, platforms, reviews, and watchlist actions
-- Review create, update, delete, and score validation
+- Review create, update, delete, and positive score validation (`0 < score <= 10`; fractions such as `8.5` are accepted; the star UI uses 1–10)
 - Lazy season loading with episode reviews, editing, deletion, and automatic series community scores
 - TMDB and RAWG integrations with normalized media cards and partial-provider failure handling
 - Interactive OpenAPI API documentation with JWT-authenticated endpoint testing through Swagger UI
@@ -33,7 +33,7 @@ Movies and games use direct reviews. TV series are reviewed episode by episode t
 ## In development and roadmap
 
 - Production deployment and operational monitoring
-- Database integrity improvements (constraints and indexes) planned separately
+- Case-insensitive username identity, including public URL compatibility, planned separately
 - Avatar uploads and broader automated UI coverage
 
 ## Tech stack
@@ -44,7 +44,7 @@ Backend: Node.js, Express, PostgreSQL, JWT, bcrypt, express-rate-limit, OpenAPI 
 
 External APIs: [TMDB](https://www.themoviedb.org/) for movies and series, and [RAWG](https://rawg.io/apidocs) for games.
 
-Testing uses Node's built-in `node:test` runner. GitHub Actions runs both suites and the frontend production build.
+Testing uses Node's built-in `node:test` runner. GitHub Actions runs both unit/regression suites, the frontend production build, and real migration/concurrency tests with PostgreSQL 18.
 
 ## Architecture
 
@@ -65,6 +65,9 @@ The provider services normalize external responses into a shared media-card and 
 ```text
 YourFavoriteProfile/
 ├── backend/
+│   ├── db/migrations/       # Immutable, numbered SQL migrations
+│   ├── scripts/             # Migration, verified backup and DB test commands
+│   ├── integration/         # Disposable PostgreSQL integration tests
 │   ├── docs/
 │   │   └── openapi.yaml      # OpenAPI 3 API specification
 │   ├── src/
@@ -87,31 +90,60 @@ YourFavoriteProfile/
 │   │   └── views/           # Application pages
 │   └── test/                # Frontend behavior/regression tests
 ├── docs/screenshots/
-├── YFP-Db.sql               # PostgreSQL schema
+├── YFP-Db.sql               # Final schema reference (not migration history)
 └── .github/workflows/ci.yml
 ```
 
 ## Local development
 
-Requirements: Node.js 22+, Yarn 1.22+, PostgreSQL, a TMDB API key, and a RAWG API key.
+Requirements: Node.js 24, Yarn 1.22, PostgreSQL 18 (the tested version), a TMDB API key, and a RAWG API key.
 
 ### Database
 
-Create a PostgreSQL database, then apply the schema from the project root:
+Schema changes are managed through migrations. For a fresh database, create an empty database:
 
 ```bash
-createdb your_favorite_profile
-psql -U postgres -d your_favorite_profile -f YFP-Db.sql
+createdb -U postgres yfpdb
 ```
 
-### Backend
-
+Install backend dependencies and configure `DATABASE_URL` in `backend/.env` to point at it:
 ```bash
 cd backend
 yarn install
 copy .env.example .env     # PowerShell; use cp on macOS/Linux
+yarn db:status
+yarn db:migrate
+```
+
+Migration commands require **only `DATABASE_URL`**, not JWT or provider keys. `yarn db:status` and `yarn db:migrate --dry-run` are read-only plans. A fresh database runs the historical baseline followed by all later migrations. `YFP-Db.sql` is the final schema reference, verified against migration output by tests; do not run it before migrations.
+
+For an existing database created from the original schema, stop application writers, take and verify a current backup, then run:
+
+```bash
+cd backend
+yarn db:status
+yarn db:backup
+yarn db:migrate
+yarn db:status
+```
+
+`db:backup` requires `pg_dump` and `pg_restore` on PATH (or `PG_BIN` pointing to their directory), and a database role with `CREATEDB`. It supports plain local connections and writes a custom-format dump into the ignored `.backups/` directory. It restores into a newly created disposable database and compares rows, IDs, sequences, constraints, indexes, and views before writing a `.verified.json` report. It never restores over the source database. Keep backups private and retain a copy outside this checkout; deployment-specific TLS/backup tooling should be used for remote databases.
+
+Existing databases are adopted only if all eight application tables, both rating views, columns/types/defaults, constraints, and indexes match `backend/db/baseline-signature.json`. This PostgreSQL 18 catalog signature represents `001_baseline.sql`; the equivalent media-view array-cast rendering produced by `pg_dump`/restore is also accepted. The runner records that baseline without replaying table creation. Unexpected or altered schemas stop with an error; they are never silently stamped. Final-schema SQL imports without migration history are deliberately not adopted as historical baselines.
+
+The runner checks all pending integrity rules before changing an existing database, locks application tables during migration, and uses a transaction-scoped advisory lock to exclude another runner. All pending SQL and `schema_migrations` history entries commit together or roll back together. Applied files are immutable: SHA-256 checksums (with CRLF/LF normalized), filenames, and ordering are checked on every run. Add a new numbered migration for future changes; do not edit or delete applied files. There is no automatic down/reset command.
+
+Core protection includes typed media identity, valid media/watchlist domains, one review per user/target, normalized email uniqueness, and positive review scores. Existing raw email uniqueness, foreign keys, review target XOR, lookup indexes, IDs, and data are retained. Username identity remains case-sensitive.
+
+### Backend
+
+After migrations, configure the remaining application environment variables and start the API from `backend/`:
+
+```bash
 yarn dev
 ```
+
+Run migrations before starting this version of the application: its media UPSERT requires the new three-column unique constraint.
 
 The API listens on `http://localhost:3000` by default. `yarn start` runs the production server entry point.
 
@@ -174,6 +206,14 @@ yarn build
 
 The production frontend output is written to `frontend/dist/`. CI runs dependency installation, both test suites, and this build on every push and pull request.
 
+Run PostgreSQL integration tests from `backend/`:
+
+```bash
+yarn test:db --local
+```
+
+`--local` explicitly uses `DATABASE_URL` as the administrative connection. Alternatively, set `TEST_DATABASE_URL` and run `yarn test:db`. The role must have `CREATEDB`. Tests create randomly named `yfp_migration_test_*` databases, exercise both empty and populated-baseline adoption flows, and drop only databases created by that test run. They never insert test rows into the administrative database. Missing configuration fails instead of silently skipping. CI supplies an isolated PostgreSQL service; no TMDB/RAWG calls or production secrets are needed.
+
 ## API areas
 
 The REST API is grouped under `/api`:
@@ -194,7 +234,8 @@ Passwords are hashed with bcrypt, protected routes use JWT middleware, PostgreSQ
 
 - External provider search and the authenticated watchlist-only Browse view are bounded by provider pagination; Browse communicates when it has scanned a limited result window.
 - Legacy direct series reviews are retained; new series reviews must target an episode. Season 0 specials are not included in the episode review flow.
-- The existing media key is `(external_id, source)`, so TMDB movie/series IDs can collide. Season loading rejects a conflicting local movie identity rather than attaching episodes to it; changing that key requires a separate database task.
+- Database migrations take table locks and should run during a maintenance window. Baseline adoption intentionally rejects customized schemas; inspect differences before planning a separate migration.
+- Scores retain PostgreSQL `NUMERIC(3,1)` precision; the API accepts positive numeric fractions, with stored values rounded to one decimal place.
 - The current frontend stores the JWT in browser local storage, so deployments should use an appropriate HTTPS origin and browser security policy.
 - No license is declared for this repository yet.
 

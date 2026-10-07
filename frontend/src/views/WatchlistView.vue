@@ -57,10 +57,10 @@ async function removeItem(mediaId) {
 
 async function updateStatus(mediaId, status) {
   try {
-    await api.post('/watchlist', { mediaId, status });
+    await api.post("/watchlist", { mediaId, status });
     const item = items.value.find((i) => i.media_id === mediaId);
     if (item) item.status = status;
-    if (activeStatus.value !== 'all') loadWatchlist();
+    if (activeStatus.value !== "all") loadWatchlist();
   } catch (err) {
     console.error(err);
   }
@@ -229,7 +229,9 @@ watch(activeStatus, loadWatchlist);
   height: 32px;
   color: #fff;
 }
-.watch-poster:hover .remove-overlay { opacity: 1; }
+.watch-poster:hover .remove-overlay {
+  opacity: 1;
+}
 .watch-title {
   font-size: 13px;
   font-weight: 600;
@@ -247,8 +249,15 @@ watch(activeStatus, loadWatchlist);
   cursor: pointer;
 }
 @media (max-width: 768px) {
-  .watchlist-page { padding: 32px 24px; }
-  .watchlist-page h1 { font-size: 22px; }
-  .grid { grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 14px; }
+  .watchlist-page {
+    padding: 32px 24px;
+  }
+  .watchlist-page h1 {
+    font-size: 22px;
+  }
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 14px;
+  }
 }
 </style>

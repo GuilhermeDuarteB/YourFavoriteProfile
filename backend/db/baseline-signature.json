@@ -1,0 +1,838 @@
+{
+  "columns": [
+    {
+      "table_name": "episodes",
+      "name": "id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('episodes_id_seq'::regclass)",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "episodes",
+      "name": "season_id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "episodes",
+      "name": "episode_number",
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "episodes",
+      "name": "title",
+      "type": "character varying(255)",
+      "not_null": false,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "episodes",
+      "name": "air_date",
+      "type": "date",
+      "not_null": false,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "follows",
+      "name": "id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('follows_id_seq'::regclass)",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "follows",
+      "name": "follower_id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "follows",
+      "name": "following_id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "follows",
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "not_null": false,
+      "default_value": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "media",
+      "name": "id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('media_id_seq'::regclass)",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "media",
+      "name": "external_id",
+      "type": "character varying(50)",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "media",
+      "name": "source",
+      "type": "character varying(20)",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "media",
+      "name": "type",
+      "type": "character varying(20)",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "media",
+      "name": "title",
+      "type": "character varying(255)",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "media",
+      "name": "poster_url",
+      "type": "character varying(500)",
+      "not_null": false,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "media",
+      "name": "release_date",
+      "type": "date",
+      "not_null": false,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "media",
+      "name": "genres",
+      "type": "text[]",
+      "not_null": false,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "media",
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "not_null": false,
+      "default_value": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "reviews",
+      "name": "id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('reviews_id_seq'::regclass)",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "reviews",
+      "name": "user_id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "reviews",
+      "name": "media_id",
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "reviews",
+      "name": "episode_id",
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "reviews",
+      "name": "score",
+      "type": "numeric(3,1)",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "reviews",
+      "name": "comment",
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "reviews",
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "not_null": false,
+      "default_value": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "seasons",
+      "name": "id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('seasons_id_seq'::regclass)",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "seasons",
+      "name": "media_id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "seasons",
+      "name": "season_number",
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "seasons",
+      "name": "title",
+      "type": "character varying(255)",
+      "not_null": false,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "top_five",
+      "name": "id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('top_five_id_seq'::regclass)",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "top_five",
+      "name": "user_id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "top_five",
+      "name": "media_id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "top_five",
+      "name": "rank",
+      "type": "smallint",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "top_five",
+      "name": "added_at",
+      "type": "timestamp without time zone",
+      "not_null": false,
+      "default_value": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "users",
+      "name": "id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('users_id_seq'::regclass)",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "users",
+      "name": "username",
+      "type": "character varying(50)",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "users",
+      "name": "email",
+      "type": "character varying(255)",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "users",
+      "name": "password_hash",
+      "type": "character varying(255)",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "users",
+      "name": "bio",
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "users",
+      "name": "avatar_url",
+      "type": "character varying(500)",
+      "not_null": false,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "users",
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "not_null": false,
+      "default_value": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "watchlist",
+      "name": "id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('watchlist_id_seq'::regclass)",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "watchlist",
+      "name": "user_id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "watchlist",
+      "name": "media_id",
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "watchlist",
+      "name": "status",
+      "type": "character varying(20)",
+      "not_null": true,
+      "default_value": "'want_to_watch'::character varying",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "table_name": "watchlist",
+      "name": "added_at",
+      "type": "timestamp without time zone",
+      "not_null": false,
+      "default_value": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "generated": ""
+    }
+  ],
+  "constraints": [
+    {
+      "table_name": "episodes",
+      "name": "episodes_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true
+    },
+    {
+      "table_name": "episodes",
+      "name": "episodes_season_id_episode_number_key",
+      "type": "u",
+      "definition": "UNIQUE (season_id, episode_number)",
+      "validated": true
+    },
+    {
+      "table_name": "episodes",
+      "name": "episodes_season_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (season_id) REFERENCES seasons(id) ON DELETE CASCADE",
+      "validated": true
+    },
+    {
+      "table_name": "follows",
+      "name": "follows_check",
+      "type": "c",
+      "definition": "CHECK ((follower_id <> following_id))",
+      "validated": true
+    },
+    {
+      "table_name": "follows",
+      "name": "follows_follower_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE",
+      "validated": true
+    },
+    {
+      "table_name": "follows",
+      "name": "follows_follower_id_following_id_key",
+      "type": "u",
+      "definition": "UNIQUE (follower_id, following_id)",
+      "validated": true
+    },
+    {
+      "table_name": "follows",
+      "name": "follows_following_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE",
+      "validated": true
+    },
+    {
+      "table_name": "follows",
+      "name": "follows_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true
+    },
+    {
+      "table_name": "media",
+      "name": "media_external_id_source_key",
+      "type": "u",
+      "definition": "UNIQUE (external_id, source)",
+      "validated": true
+    },
+    {
+      "table_name": "media",
+      "name": "media_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true
+    },
+    {
+      "table_name": "reviews",
+      "name": "reviews_check",
+      "type": "c",
+      "definition": "CHECK ((((media_id IS NOT NULL) AND (episode_id IS NULL)) OR ((media_id IS NULL) AND (episode_id IS NOT NULL))))",
+      "validated": true
+    },
+    {
+      "table_name": "reviews",
+      "name": "reviews_episode_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (episode_id) REFERENCES episodes(id) ON DELETE CASCADE",
+      "validated": true
+    },
+    {
+      "table_name": "reviews",
+      "name": "reviews_media_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE",
+      "validated": true
+    },
+    {
+      "table_name": "reviews",
+      "name": "reviews_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true
+    },
+    {
+      "table_name": "reviews",
+      "name": "reviews_score_check",
+      "type": "c",
+      "definition": "CHECK (((score >= (0)::numeric) AND (score <= (10)::numeric)))",
+      "validated": true
+    },
+    {
+      "table_name": "reviews",
+      "name": "reviews_user_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+      "validated": true
+    },
+    {
+      "table_name": "seasons",
+      "name": "seasons_media_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE",
+      "validated": true
+    },
+    {
+      "table_name": "seasons",
+      "name": "seasons_media_id_season_number_key",
+      "type": "u",
+      "definition": "UNIQUE (media_id, season_number)",
+      "validated": true
+    },
+    {
+      "table_name": "seasons",
+      "name": "seasons_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true
+    },
+    {
+      "table_name": "top_five",
+      "name": "top_five_media_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE",
+      "validated": true
+    },
+    {
+      "table_name": "top_five",
+      "name": "top_five_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true
+    },
+    {
+      "table_name": "top_five",
+      "name": "top_five_rank_check",
+      "type": "c",
+      "definition": "CHECK (((rank >= 1) AND (rank <= 5)))",
+      "validated": true
+    },
+    {
+      "table_name": "top_five",
+      "name": "top_five_user_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+      "validated": true
+    },
+    {
+      "table_name": "top_five",
+      "name": "top_five_user_id_media_id_key",
+      "type": "u",
+      "definition": "UNIQUE (user_id, media_id)",
+      "validated": true
+    },
+    {
+      "table_name": "top_five",
+      "name": "top_five_user_id_rank_key",
+      "type": "u",
+      "definition": "UNIQUE (user_id, rank)",
+      "validated": true
+    },
+    {
+      "table_name": "users",
+      "name": "users_email_key",
+      "type": "u",
+      "definition": "UNIQUE (email)",
+      "validated": true
+    },
+    {
+      "table_name": "users",
+      "name": "users_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true
+    },
+    {
+      "table_name": "users",
+      "name": "users_username_key",
+      "type": "u",
+      "definition": "UNIQUE (username)",
+      "validated": true
+    },
+    {
+      "table_name": "watchlist",
+      "name": "watchlist_media_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE",
+      "validated": true
+    },
+    {
+      "table_name": "watchlist",
+      "name": "watchlist_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true
+    },
+    {
+      "table_name": "watchlist",
+      "name": "watchlist_user_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+      "validated": true
+    },
+    {
+      "table_name": "watchlist",
+      "name": "watchlist_user_id_media_id_key",
+      "type": "u",
+      "definition": "UNIQUE (user_id, media_id)",
+      "validated": true
+    }
+  ],
+  "indexes": [
+    {
+      "table_name": "episodes",
+      "name": "episodes_pkey",
+      "definition": "CREATE UNIQUE INDEX episodes_pkey ON public.episodes USING btree (id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "episodes",
+      "name": "episodes_season_id_episode_number_key",
+      "definition": "CREATE UNIQUE INDEX episodes_season_id_episode_number_key ON public.episodes USING btree (season_id, episode_number)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "episodes",
+      "name": "idx_episodes_season",
+      "definition": "CREATE INDEX idx_episodes_season ON public.episodes USING btree (season_id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "follows",
+      "name": "follows_follower_id_following_id_key",
+      "definition": "CREATE UNIQUE INDEX follows_follower_id_following_id_key ON public.follows USING btree (follower_id, following_id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "follows",
+      "name": "follows_pkey",
+      "definition": "CREATE UNIQUE INDEX follows_pkey ON public.follows USING btree (id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "follows",
+      "name": "idx_follows_follower",
+      "definition": "CREATE INDEX idx_follows_follower ON public.follows USING btree (follower_id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "follows",
+      "name": "idx_follows_following",
+      "definition": "CREATE INDEX idx_follows_following ON public.follows USING btree (following_id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "media",
+      "name": "media_external_id_source_key",
+      "definition": "CREATE UNIQUE INDEX media_external_id_source_key ON public.media USING btree (external_id, source)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "media",
+      "name": "media_pkey",
+      "definition": "CREATE UNIQUE INDEX media_pkey ON public.media USING btree (id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "reviews",
+      "name": "idx_reviews_episode",
+      "definition": "CREATE INDEX idx_reviews_episode ON public.reviews USING btree (episode_id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "reviews",
+      "name": "idx_reviews_media",
+      "definition": "CREATE INDEX idx_reviews_media ON public.reviews USING btree (media_id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "reviews",
+      "name": "idx_reviews_user",
+      "definition": "CREATE INDEX idx_reviews_user ON public.reviews USING btree (user_id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "reviews",
+      "name": "reviews_pkey",
+      "definition": "CREATE UNIQUE INDEX reviews_pkey ON public.reviews USING btree (id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "seasons",
+      "name": "idx_seasons_media",
+      "definition": "CREATE INDEX idx_seasons_media ON public.seasons USING btree (media_id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "seasons",
+      "name": "seasons_media_id_season_number_key",
+      "definition": "CREATE UNIQUE INDEX seasons_media_id_season_number_key ON public.seasons USING btree (media_id, season_number)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "seasons",
+      "name": "seasons_pkey",
+      "definition": "CREATE UNIQUE INDEX seasons_pkey ON public.seasons USING btree (id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "top_five",
+      "name": "idx_top_five_user",
+      "definition": "CREATE INDEX idx_top_five_user ON public.top_five USING btree (user_id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "top_five",
+      "name": "top_five_pkey",
+      "definition": "CREATE UNIQUE INDEX top_five_pkey ON public.top_five USING btree (id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "top_five",
+      "name": "top_five_user_id_media_id_key",
+      "definition": "CREATE UNIQUE INDEX top_five_user_id_media_id_key ON public.top_five USING btree (user_id, media_id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "top_five",
+      "name": "top_five_user_id_rank_key",
+      "definition": "CREATE UNIQUE INDEX top_five_user_id_rank_key ON public.top_five USING btree (user_id, rank)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "users",
+      "name": "users_email_key",
+      "definition": "CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "users",
+      "name": "users_pkey",
+      "definition": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "users",
+      "name": "users_username_key",
+      "definition": "CREATE UNIQUE INDEX users_username_key ON public.users USING btree (username)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "watchlist",
+      "name": "idx_watchlist_user",
+      "definition": "CREATE INDEX idx_watchlist_user ON public.watchlist USING btree (user_id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "watchlist",
+      "name": "watchlist_pkey",
+      "definition": "CREATE UNIQUE INDEX watchlist_pkey ON public.watchlist USING btree (id)",
+      "valid": true,
+      "ready": true
+    },
+    {
+      "table_name": "watchlist",
+      "name": "watchlist_user_id_media_id_key",
+      "definition": "CREATE UNIQUE INDEX watchlist_user_id_media_id_key ON public.watchlist USING btree (user_id, media_id)",
+      "valid": true,
+      "ready": true
+    }
+  ],
+  "views": [
+    {
+      "name": "vw_media_rating",
+      "definition": " SELECT m.id AS media_id,\n    m.title,\n    avg(r.score) AS avg_score\n   FROM media m\n     JOIN reviews r ON r.media_id = m.id\n  WHERE m.type::text = ANY (ARRAY['movie'::character varying, 'game'::character varying]::text[])\n  GROUP BY m.id, m.title;"
+    },
+    {
+      "name": "vw_series_rating",
+      "definition": " SELECT m.id AS media_id,\n    m.title,\n    avg(ep_avg.avg_score) AS series_score\n   FROM media m\n     JOIN seasons se ON se.media_id = m.id\n     JOIN episodes ep ON ep.season_id = se.id\n     JOIN ( SELECT reviews.episode_id,\n            avg(reviews.score) AS avg_score\n           FROM reviews\n          WHERE reviews.episode_id IS NOT NULL\n          GROUP BY reviews.episode_id) ep_avg ON ep_avg.episode_id = ep.id\n  WHERE m.type::text = 'series'::text\n  GROUP BY m.id, m.title;"
+    }
+  ]
+}

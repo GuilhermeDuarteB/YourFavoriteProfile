@@ -8,8 +8,12 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "node --test",
-    "test:watch": "node --test --watch"
+    "test": "node --test test/*.test.js",
+    "test:watch": "node --test --watch test/*.test.js",
+    "db:migrate": "node scripts/migrate.js",
+    "db:status": "node scripts/migrate.js --status",
+    "db:backup": "node scripts/backup-db.js",
+    "test:db": "node scripts/test-db.js"
   },
   "keywords": [],
   "author": "",

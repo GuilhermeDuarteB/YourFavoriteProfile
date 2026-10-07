@@ -23,7 +23,9 @@ defineProps({
       <div class="card-developer" v-if="developer">{{ developer }}</div>
       <div class="card-meta">
         <span>{{ meta }}</span>
-        <span class="card-score" v-if="score !== null && score !== undefined">★ {{ score }}</span>
+        <span class="card-score" v-if="score !== null && score !== undefined"
+          >★ {{ score }}</span
+        >
       </div>
     </div>
   </router-link>

@@ -114,12 +114,32 @@ defineProps({
   color: var(--text-dim);
 }
 @media (max-width: 768px) {
-  .hero-visual { height: 300px; max-width: 340px; overflow: hidden; margin: 0 auto; }
-  .poster { width: 145px; height: 215px; }
-  .p1 { left: 70px; }
-  .p2 { left: 155px; }
-  .p3 { left: 0; }
-  .rating-chip { bottom: 62px; right: 4px; padding: 9px 12px; }
-  .rating-num { font-size: 18px; }
+  .hero-visual {
+    height: 300px;
+    max-width: 340px;
+    overflow: hidden;
+    margin: 0 auto;
+  }
+  .poster {
+    width: 145px;
+    height: 215px;
+  }
+  .p1 {
+    left: 70px;
+  }
+  .p2 {
+    left: 155px;
+  }
+  .p3 {
+    left: 0;
+  }
+  .rating-chip {
+    bottom: 62px;
+    right: 4px;
+    padding: 9px 12px;
+  }
+  .rating-num {
+    font-size: 18px;
+  }
 }
 </style>

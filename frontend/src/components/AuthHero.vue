@@ -7,14 +7,14 @@
       <!-- Brand -->
       <div class="brand">
         <a href="/">
-        <img
-          src="../assets/ifp-logo.png"
-          alt="Your Favorite Profile Logo"
-          class="brand-logo"
-        />
+          <img
+            src="../assets/ifp-logo.png"
+            alt="Your Favorite Profile Logo"
+            class="brand-logo"
+          />
 
-        <span>YOUR FAVORITE PROFILE</span>
-      </a>
+          <span>YOUR FAVORITE PROFILE</span>
+        </a>
       </div>
 
       <!-- Main content -->
@@ -36,9 +36,7 @@
             <div class="feature-icon">
               <svg viewBox="0 0 24 24" fill="none">
                 <rect x="4" y="3" width="16" height="18" rx="2" />
-                <path
-                  d="M8 3v18M16 3v18M4 8h4M4 16h4M16 8h4M16 16h4"
-                />
+                <path d="M8 3v18M16 3v18M4 8h4M4 16h4M16 8h4M16 16h4" />
               </svg>
             </div>
 
@@ -249,12 +247,11 @@ h1 span {
 
   border-radius: 13px;
 
-  background:
-    linear-gradient(
-      145deg,
-      rgba(25, 32, 46, 0.95),
-      rgba(17, 23, 34, 0.95)
-    );
+  background: linear-gradient(
+    145deg,
+    rgba(25, 32, 46, 0.95),
+    rgba(17, 23, 34, 0.95)
+  );
 
   box-shadow:
     0 10px 30px rgba(0, 0, 0, 0.25),
@@ -359,16 +356,9 @@ h1 span {
 
   border-radius: 50%;
 
-  background:
-    linear-gradient(
-      145deg,
-      #2872ff,
-      #10285d 65%,
-      #071126
-    );
+  background: linear-gradient(145deg, #2872ff, #10285d 65%, #071126);
 
-  box-shadow:
-    0 0 35px rgba(40, 114, 255, 0.22);
+  box-shadow: 0 0 35px rgba(40, 114, 255, 0.22);
 }
 
 .horizon {
@@ -385,8 +375,7 @@ h1 span {
   border: 3px solid #2872ff;
   border-radius: 50%;
 
-  box-shadow:
-    0 0 25px rgba(40, 114, 255, 0.25);
+  box-shadow: 0 0 25px rgba(40, 114, 255, 0.25);
 }
 
 .bars {
@@ -409,12 +398,7 @@ h1 span {
 
   border-radius: 3px 3px 0 0;
 
-  background:
-    linear-gradient(
-      to top,
-      #0b1324,
-      #2872ff
-    );
+  background: linear-gradient(to top, #0b1324, #2872ff);
 }
 
 .bars i:nth-child(1) {
@@ -445,8 +429,7 @@ h1 span {
 
   border-radius: 50%;
 
-  box-shadow:
-    0 0 25px rgba(40, 114, 255, 0.17);
+  box-shadow: 0 0 25px rgba(40, 114, 255, 0.17);
 }
 
 .triangle {
@@ -464,10 +447,7 @@ h1 span {
   border-right: 55px solid transparent;
   border-bottom: 100px solid #2872ff;
 
-  filter:
-    drop-shadow(
-      0 0 18px rgba(40, 114, 255, 0.22)
-    );
+  filter: drop-shadow(0 0 18px rgba(40, 114, 255, 0.22));
 }
 
 .background-glow {

@@ -1,5 +1,6 @@
 -- =========================================
 -- YourFavoriteProfile - Database Schema
+-- Final schema reference. Prefer yarn db:migrate for fresh and existing databases.
 -- =========================================
 
 -- Users table
@@ -24,7 +25,14 @@ CREATE TABLE media (
     release_date DATE,
     genres TEXT[],                          -- Genres
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(external_id, source)
+    CONSTRAINT media_external_id_source_type_key UNIQUE(external_id, source, type),
+    CONSTRAINT media_type_check CHECK (type IN ('movie', 'series', 'game')),
+    CONSTRAINT media_source_check CHECK (source IN ('tmdb', 'rawg')),
+    CONSTRAINT media_source_type_check CHECK (
+        (source = 'tmdb' AND type IN ('movie', 'series')) OR
+        (source = 'rawg' AND type = 'game')
+    ),
+    CONSTRAINT media_external_id_nonblank_check CHECK (BTRIM(external_id) <> '')
 );
 
 -- Seasons (only series table)
@@ -52,7 +60,7 @@ CREATE TABLE reviews (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     media_id INTEGER REFERENCES media(id) ON DELETE CASCADE,        -- movies/games
     episode_id INTEGER REFERENCES episodes(id) ON DELETE CASCADE,   -- episodes
-    score NUMERIC(3,1) NOT NULL CHECK (score >= 0 AND score <= 10),
+    score NUMERIC(3,1) NOT NULL CONSTRAINT reviews_positive_score_check CHECK (score > 0 AND score <= 10),
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CHECK (
@@ -69,7 +77,8 @@ CREATE TABLE watchlist (
     status VARCHAR(20) NOT NULL DEFAULT 'want_to_watch',
         -- 'want_to_watch', 'watching', 'completed', 'dropped'
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, media_id)
+    UNIQUE(user_id, media_id),
+    CONSTRAINT watchlist_status_check CHECK (status IN ('want_to_watch', 'watching', 'completed', 'dropped'))
 );
 
 -- Top 5 user media
@@ -132,3 +141,7 @@ CREATE INDEX idx_seasons_media ON seasons(media_id);
 CREATE INDEX idx_top_five_user ON top_five(user_id);
 CREATE INDEX idx_follows_follower ON follows(follower_id);
 CREATE INDEX idx_follows_following ON follows(following_id);
+
+CREATE UNIQUE INDEX reviews_user_media_unique ON reviews(user_id, media_id) WHERE media_id IS NOT NULL;
+CREATE UNIQUE INDEX reviews_user_episode_unique ON reviews(user_id, episode_id) WHERE episode_id IS NOT NULL;
+CREATE UNIQUE INDEX users_email_normalized_unique ON users(LOWER(TRIM(email)));

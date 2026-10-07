@@ -19,7 +19,9 @@ const loading = ref(false);
 async function handleSubmit() {
   error.value = "";
 
-  if (email.value.trim().toLowerCase() !== confirmEmail.value.trim().toLowerCase()) {
+  if (
+    email.value.trim().toLowerCase() !== confirmEmail.value.trim().toLowerCase()
+  ) {
     error.value = "Emails don't match";
     return;
   }
@@ -255,7 +257,6 @@ async function handleSubmit() {
   background: #0b0e13;
 }
 
-
 .register-panel {
   position: fixed;
 
@@ -279,14 +280,12 @@ async function handleSubmit() {
   overflow-y: auto;
 }
 
-
 .register-content {
   width: 100%;
   max-width: 390px;
 
   margin: auto;
 }
-
 
 .form-header {
   display: flex;
@@ -351,7 +350,6 @@ form {
   font-size: 0.76rem;
   font-weight: 550;
 }
-
 
 .input-wrap {
   position: relative;

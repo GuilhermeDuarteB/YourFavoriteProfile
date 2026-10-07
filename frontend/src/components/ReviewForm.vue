@@ -45,7 +45,9 @@ async function submit() {
         return;
       }
       res = await api.post("/reviews", {
-        ...(props.episodeId ? { episodeId: props.episodeId } : { mediaId: props.mediaId }),
+        ...(props.episodeId
+          ? { episodeId: props.episodeId }
+          : { mediaId: props.mediaId }),
         score: Number(score.value),
         comment: comment.value,
       });
@@ -84,7 +86,9 @@ async function submit() {
               : "Post review"
         }}
       </button>
-      <button class="btn" :disabled="saving" @click="emit('cancel')">Cancel</button>
+      <button class="btn" :disabled="saving" @click="emit('cancel')">
+        Cancel
+      </button>
     </div>
   </div>
 </template>
@@ -139,5 +143,9 @@ textarea {
   opacity: 0.6;
   cursor: not-allowed;
 }
-.btn:focus-visible, textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.btn:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
 </style>

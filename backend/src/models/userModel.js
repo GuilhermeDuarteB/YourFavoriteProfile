@@ -13,9 +13,10 @@ export async function createUser({ username, email, passwordHash }) {
 //find user email func
 
 export async function findUserByEmail(email) {
-  const result = await pools.query("SELECT * from users WHERE LOWER(TRIM(email)) = $1", [
-    normalizeEmail(email),
-  ]);
+  const result = await pools.query(
+    "SELECT * from users WHERE LOWER(TRIM(email)) = $1",
+    [normalizeEmail(email)],
+  );
   return result.rows[0];
 }
 
@@ -79,11 +80,10 @@ export async function updateUserProfile(userId, { bio, avatarUrl }) {
 export async function updateUserEmail(userId, newEmail) {
   const result = await pools.query(
     `UPDATE users SET email = $1 WHERE id = $2 RETURNING id, username, email`,
-    [normalizeEmail(newEmail), userId]
+    [normalizeEmail(newEmail), userId],
   );
   return result.rows[0];
 }
-
 
 //delete user
 
@@ -91,13 +91,12 @@ export async function deleteUser(id) {
   await pools.query(`DELETE FROM users WHERE id = $1`, [id]);
 }
 
-
 //update username
 
 export async function updateUsername(userId, newUsername) {
   const result = await pools.query(
     `UPDATE users SET username = $1 WHERE id = $2 RETURNING id, username, email`,
-    [newUsername, userId]
+    [newUsername, userId],
   );
   return result.rows[0];
 }

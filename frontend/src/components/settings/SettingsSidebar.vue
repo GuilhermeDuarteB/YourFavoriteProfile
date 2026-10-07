@@ -12,7 +12,11 @@ const sections = [
   { id: "profile", label: "Profile", description: "Public profile and Top 5" },
   { id: "account", label: "Account", description: "Username and email" },
   { id: "security", label: "Security", description: "Session controls" },
-  { id: "danger", label: "Danger Zone", description: "Permanent account actions" },
+  {
+    id: "danger",
+    label: "Danger Zone",
+    description: "Permanent account actions",
+  },
 ];
 </script>
 
@@ -60,7 +64,10 @@ const sections = [
   text-align: center;
   cursor: pointer;
   font: inherit;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .settings-nav-item:hover {

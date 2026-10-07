@@ -32,13 +32,21 @@ export async function getTrendingSeriesWithDetails() {
 
   detailed.forEach((result, index) => {
     if (result.status === "rejected") {
-      console.error(`TMDB latest episode details failed (${topSeries[index].id}):`, result.reason.message);
+      console.error(
+        `TMDB latest episode details failed (${topSeries[index].id}):`,
+        result.reason.message,
+      );
     }
   });
-  if (detailed.length && detailed.every((result) => result.status === "rejected")) {
+  if (
+    detailed.length &&
+    detailed.every((result) => result.status === "rejected")
+  ) {
     throw new Error("TMDB latest episode details unavailable");
   }
-  return detailed.filter((result) => result.status === "fulfilled").map((result) => result.value.data);
+  return detailed
+    .filter((result) => result.status === "fulfilled")
+    .map((result) => result.value.data);
 }
 
 //export tmdb GENRES
@@ -131,15 +139,15 @@ export async function discoverSeries({
   return fetchPages("/discover/tv", params, startPage, endPage);
 }
 
-export async function searchMovie(query){
-    const res = await tmdb.get('/search/movie', {
-        params: {query}
-    });
-    return res.data.results;
+export async function searchMovie(query) {
+  const res = await tmdb.get("/search/movie", {
+    params: { query },
+  });
+  return res.data.results;
 }
 
 export async function searchSeries(query) {
-  const res = await tmdb.get('/search/tv', { params: { query } });
+  const res = await tmdb.get("/search/tv", { params: { query } });
   return res.data.results;
 }
 
@@ -149,7 +157,7 @@ export async function getMovieDetails(id) {
     tmdb.get(`/movie/${id}/credits`),
   ]);
 
-  return {... detailsRes.data, cast: creditsRes.data.cast?.slice(0,8) || []};
+  return { ...detailsRes.data, cast: creditsRes.data.cast?.slice(0, 8) || [] };
 }
 
 export async function getSeriesDetails(id) {
@@ -158,7 +166,7 @@ export async function getSeriesDetails(id) {
     tmdb.get(`/tv/${id}/credits`),
   ]);
 
-  return {... detailsRes.data, cast: creditsRes.data.cast?.slice(0,8) || []};
+  return { ...detailsRes.data, cast: creditsRes.data.cast?.slice(0, 8) || [] };
 }
 
 export async function getSeasonDetails(seriesId, seasonNumber) {

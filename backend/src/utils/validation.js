@@ -3,7 +3,11 @@ export function normalizeEmail(email) {
 }
 
 export function validateUsername(username) {
-  if (typeof username !== "string" || username.length < 3 || username.length > 50) {
+  if (
+    typeof username !== "string" ||
+    username.length < 3 ||
+    username.length > 50
+  ) {
     return "Username must be between 3 and 50 characters";
   }
   if (!/^[a-zA-Z0-9_.]+$/.test(username)) {
@@ -14,7 +18,8 @@ export function validateUsername(username) {
 
 export function validateEmail(email) {
   return email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    ? null : "Enter a valid email address";
+    ? null
+    : "Enter a valid email address";
 }
 
 export function validatePassword(password) {
@@ -22,13 +27,21 @@ export function validatePassword(password) {
     return "Password must be at least 8 characters";
   }
   // bcrypt only uses the first 72 bytes; reject instead of silently truncating.
-  return Buffer.byteLength(password, "utf8") > 72 ? "Password must not exceed 72 UTF-8 bytes" : null;
+  return Buffer.byteLength(password, "utf8") > 72
+    ? "Password must not exceed 72 UTF-8 bytes"
+    : null;
 }
 
 export function validateReview(score, comment) {
-  if (typeof score !== "number" || !Number.isFinite(score) || score < 0 || score > 10) {
-    return "Score must be a number between 0 and 10";
+  if (
+    typeof score !== "number" ||
+    !Number.isFinite(score) ||
+    score <= 0 ||
+    score > 10
+  ) {
+    return "Score must be a number greater than 0 and at most 10";
   }
-  if (comment != null && typeof comment !== "string") return "Comment must be text or null";
+  if (comment != null && typeof comment !== "string")
+    return "Comment must be text or null";
   return null;
 }

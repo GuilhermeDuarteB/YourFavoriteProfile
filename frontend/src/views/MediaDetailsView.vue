@@ -22,8 +22,12 @@ const watchlistLoading = ref(false);
 const reviewError = ref("");
 const communityScoreError = ref("");
 const deletingReview = ref(false);
-const directReviewsAllowed = computed(() => ["movie", "game"].includes(detail.value?.type));
-const providerName = computed(() => detail.value?.source === "rawg" ? "RAWG" : "TMDB");
+const directReviewsAllowed = computed(() =>
+  ["movie", "game"].includes(detail.value?.type),
+);
+const providerName = computed(() =>
+  detail.value?.source === "rawg" ? "RAWG" : "TMDB",
+);
 let detailRequest = 0;
 
 async function checkWatchlistStatus() {
@@ -31,7 +35,8 @@ async function checkWatchlistStatus() {
   const current = detail.value;
   try {
     const res = await api.get(`/watchlist/${current.mediaId}`);
-    if (detail.value === current) watchlistStatus.value = res.data.inWatchlist ? res.data.status : null;
+    if (detail.value === current)
+      watchlistStatus.value = res.data.inWatchlist ? res.data.status : null;
   } catch (err) {
     console.error(err);
   }
@@ -101,13 +106,18 @@ async function loadReviews() {
     const res = await api.get(`/reviews/media/${mediaId}`);
     if (detail.value?.mediaId === mediaId) reviews.value = res.data;
   } catch (err) {
-    if (detail.value?.mediaId === mediaId) reviewError.value = "Unable to load reviews. Please retry.";
+    if (detail.value?.mediaId === mediaId)
+      reviewError.value = "Unable to load reviews. Please retry.";
   }
 }
 
 async function onReviewSaved() {
   showForm.value = false;
-  await Promise.all([loadReviews(), refreshCommunityScore(), checkWatchlistStatus()]);
+  await Promise.all([
+    loadReviews(),
+    refreshCommunityScore(),
+    checkWatchlistStatus(),
+  ]);
 }
 
 async function refreshCommunityScore() {
@@ -116,9 +126,12 @@ async function refreshCommunityScore() {
   communityScoreError.value = "";
   try {
     const res = await api.get(`/media/${current.type}/${current.externalId}`);
-    if (detail.value === current) current.communityScore = res.data.communityScore;
+    if (detail.value === current)
+      current.communityScore = res.data.communityScore;
   } catch {
-    if (detail.value === current) communityScoreError.value = "The community score could not be refreshed. Please retry.";
+    if (detail.value === current)
+      communityScoreError.value =
+        "The community score could not be refreshed. Please retry.";
   }
 }
 
@@ -129,7 +142,8 @@ async function deleteMyReview() {
     await api.delete(`/reviews/${myReview.value.id}`);
     await onReviewSaved();
   } catch (err) {
-    reviewError.value = err.response?.data?.error || "Unable to delete your review.";
+    reviewError.value =
+      err.response?.data?.error || "Unable to delete your review.";
   } finally {
     deletingReview.value = false;
   }
@@ -173,8 +187,22 @@ watch(() => [route.name, route.params.id], loadDetail, { immediate: true });
               <span v-if="detail.developer">· {{ detail.developer }}</span>
             </div>
             <div class="rating-sources">
-              <div><span>{{ providerName }}</span><strong>{{ detail.score == null ? 'No provider rating' : `★ ${Number(detail.score).toFixed(1)}` }}</strong></div>
-              <div><span>Your Favorite Profile</span><strong>{{ detail.communityScore == null ? 'No community ratings yet' : `★ ${Number(detail.communityScore).toFixed(1)}` }}</strong></div>
+              <div>
+                <span>{{ providerName }}</span
+                ><strong>{{
+                  detail.score == null
+                    ? "No provider rating"
+                    : `★ ${Number(detail.score).toFixed(1)}`
+                }}</strong>
+              </div>
+              <div>
+                <span>Your Favorite Profile</span
+                ><strong>{{
+                  detail.communityScore == null
+                    ? "No community ratings yet"
+                    : `★ ${Number(detail.communityScore).toFixed(1)}`
+                }}</strong>
+              </div>
             </div>
             <div class="detail-genres" v-if="detail.genres?.length">
               <span v-for="g in detail.genres" :key="g" class="genre-pill">{{
@@ -183,7 +211,9 @@ watch(() => [route.name, route.params.id], loadDetail, { immediate: true });
             </div>
             <div class="detail-actions">
               <button
-                v-if="directReviewsAllowed && authStore.isAuthenticated && !showForm"
+                v-if="
+                  directReviewsAllowed && authStore.isAuthenticated && !showForm
+                "
                 class="btn btn-primary"
                 @click="showForm = true"
               >
@@ -227,12 +257,36 @@ watch(() => [route.name, route.params.id], loadDetail, { immediate: true });
             />
           </Modal>
           <ReviewList :reviews="reviews" />
-          <button v-if="myReview" type="button" class="btn" :disabled="deletingReview" @click="deleteMyReview">{{ deletingReview ? 'Deleting...' : 'Delete your review' }}</button>
+          <button
+            v-if="myReview"
+            type="button"
+            class="btn"
+            :disabled="deletingReview"
+            @click="deleteMyReview"
+          >
+            {{ deletingReview ? "Deleting..." : "Delete your review" }}
+          </button>
         </section>
-        <p v-if="reviewError" role="alert">{{ reviewError }} <button type="button" class="btn" @click="onReviewSaved">Retry</button></p>
-        <p v-if="communityScoreError" role="alert">{{ communityScoreError }} <button type="button" class="btn" @click="refreshCommunityScore">Retry score</button></p>
+        <p v-if="reviewError" role="alert">
+          {{ reviewError }}
+          <button type="button" class="btn" @click="onReviewSaved">
+            Retry
+          </button>
+        </p>
+        <p v-if="communityScoreError" role="alert">
+          {{ communityScoreError }}
+          <button type="button" class="btn" @click="refreshCommunityScore">
+            Retry score
+          </button>
+        </p>
 
-        <SeriesSeasons v-if="detail.type === 'series'" :key="detail.externalId" :series-id="detail.externalId" :seasons="detail.seasons || []" @changed="refreshCommunityScore" />
+        <SeriesSeasons
+          v-if="detail.type === 'series'"
+          :key="detail.externalId"
+          :series-id="detail.externalId"
+          :seasons="detail.seasons || []"
+          @changed="refreshCommunityScore"
+        />
 
         <section v-if="detail.cast?.length">
           <h3>Cast</h3>
@@ -325,15 +379,44 @@ watch(() => [route.name, route.params.id], loadDetail, { immediate: true });
   margin-bottom: 14px;
 }
 
-.rating-sources { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-bottom: 18px; }
-.rating-sources > div { display: flex; flex-direction: column; gap: 4px; }
-.rating-sources span { color: var(--text-dim); font-size: 11px; }
-.rating-sources strong { color: var(--amber); font-size: 13px; }
-.detail-info { min-width: 0; }
-.detail-info h1 { overflow-wrap: anywhere; }
-.btn:disabled { opacity: .6; cursor: not-allowed; }
-.btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-@media (max-width: 768px) { .rating-sources { justify-content: center; } }
+.rating-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-bottom: 18px;
+}
+.rating-sources > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rating-sources span {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.rating-sources strong {
+  color: var(--amber);
+  font-size: 13px;
+}
+.detail-info {
+  min-width: 0;
+}
+.detail-info h1 {
+  overflow-wrap: anywhere;
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+@media (max-width: 768px) {
+  .rating-sources {
+    justify-content: center;
+  }
+}
 
 .detail-genres {
   display: flex;
@@ -419,7 +502,6 @@ watch(() => [route.name, route.params.id], loadDetail, { immediate: true });
   color: var(--text-mute);
 }
 
-
 @media (max-width: 768px) {
   .detail-overlay {
     flex-direction: column;
@@ -431,10 +513,19 @@ watch(() => [route.name, route.params.id], loadDetail, { immediate: true });
   .detail-body {
     padding: 24px;
   }
-  .detail-info { width: 100%; }
-  .detail-info h1 { font-size: 26px; }
-  .detail-meta { flex-wrap: wrap; justify-content: center; }
-  .detail-actions { justify-content: center; }
+  .detail-info {
+    width: 100%;
+  }
+  .detail-info h1 {
+    font-size: 26px;
+  }
+  .detail-meta {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .detail-actions {
+    justify-content: center;
+  }
 }
 
 .btn-active {

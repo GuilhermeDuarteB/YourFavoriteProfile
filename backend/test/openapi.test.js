@@ -66,7 +66,9 @@ test("OpenAPI document parses and covers the mounted API groups", () => {
   ];
 
   for (const [route, method] of protectedPaths) {
-    assert.deepEqual(document.paths[route][method].security, [{ bearerAuth: [] }]);
+    assert.deepEqual(document.paths[route][method].security, [
+      { bearerAuth: [] },
+    ]);
   }
 
   for (const [route, method] of [
@@ -96,28 +98,76 @@ test("documented methods match Express routes and all schema references resolve"
   const document = YAML.parse(fs.readFileSync(openApiPath, "utf8"));
   const actual = [];
   for (const [prefix, file] of [
-    ["auth", "authRoutes"], ["users", "userRoutes"], ["media", "mediaRoutes"],
-    ["reviews", "reviewRoutes"], ["watchlist", "watchlistRoutes"], ["follow", "followRoutes"], ["top-five", "topFiveRoutes"],
+    ["auth", "authRoutes"],
+    ["users", "userRoutes"],
+    ["media", "mediaRoutes"],
+    ["reviews", "reviewRoutes"],
+    ["watchlist", "watchlistRoutes"],
+    ["follow", "followRoutes"],
+    ["top-five", "topFiveRoutes"],
   ]) {
     const { default: router } = await import(`../src/routes/${file}.js`);
     for (const { route } of router.stack) {
       if (!route) continue;
-      const routePath = `/api/${prefix}${route.path === "/" ? "" : route.path}`.replace(/:([A-Za-z][A-Za-z0-9]*)/g, "{$1}");
-      for (const method of Object.keys(route.methods)) actual.push(`${method} ${routePath}`);
+      const routePath =
+        `/api/${prefix}${route.path === "/" ? "" : route.path}`.replace(
+          /:([A-Za-z][A-Za-z0-9]*)/g,
+          "{$1}",
+        );
+      for (const method of Object.keys(route.methods))
+        actual.push(`${method} ${routePath}`);
     }
   }
-  const documented = Object.entries(document.paths).flatMap(([route, methods]) => Object.keys(methods).map((method) => `${method} ${route}`));
+  const documented = Object.entries(document.paths).flatMap(
+    ([route, methods]) =>
+      Object.keys(methods).map((method) => `${method} ${route}`),
+  );
   assert.deepEqual(documented.sort(), actual.sort());
   function checkReferences(value) {
     if (!value || typeof value !== "object") return;
     if (value.$ref) {
       assert.ok(value.$ref.startsWith("#/"));
-      assert.ok(value.$ref.slice(2).split("/").reduce((current, key) => current?.[key], document), `Unresolved ${value.$ref}`);
+      assert.ok(
+        value.$ref
+          .slice(2)
+          .split("/")
+          .reduce((current, key) => current?.[key], document),
+        `Unresolved ${value.$ref}`,
+      );
     }
     Object.values(value).forEach(checkReferences);
   }
   checkReferences(document);
-  const request = document.paths["/api/reviews"].post.requestBody.content["application/json"].schema;
-  assert.deepEqual(request.oneOf, [{ required: ["mediaId"] }, { required: ["episodeId"] }]);
-  assert.equal(document.components.schemas.MediaDetails.properties.communityScore.nullable, true);
+  const request =
+    document.paths["/api/reviews"].post.requestBody.content["application/json"]
+      .schema;
+  assert.deepEqual(request.oneOf, [
+    { required: ["mediaId"] },
+    { required: ["episodeId"] },
+  ]);
+  assert.equal(
+    document.components.schemas.MediaDetails.properties.communityScore.nullable,
+    true,
+  );
+});
+
+test("review scores use OpenAPI 3.0 exclusive minimum and allow positive fractions", () => {
+  const document = YAML.parse(fs.readFileSync(openApiPath, "utf8"));
+  const schemas = [
+    document.components.schemas.Review.properties.score,
+    document.components.schemas.UserReview.properties.score,
+    document.components.schemas.RecentReview.properties.score.oneOf[0],
+    document.paths["/api/reviews"].post.requestBody.content["application/json"]
+      .schema.properties.score,
+    document.paths["/api/reviews/{id}"].put.requestBody.content[
+      "application/json"
+    ].schema.properties.score,
+  ];
+  for (const score of schemas) {
+    assert.equal(score.type, "number");
+    assert.equal(score.minimum, 0);
+    assert.equal(score.exclusiveMinimum, true);
+    assert.equal(score.maximum, 10);
+    assert.ok(8.5 > score.minimum && 8.5 <= score.maximum);
+  }
 });

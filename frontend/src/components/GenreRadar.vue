@@ -136,56 +136,30 @@ function gridPolygon(fraction) {
           :x2="
             center +
             maxRadius *
-              Math.cos(
-                i * ((2 * Math.PI) / points.length) - Math.PI / 2,
-              )
+              Math.cos(i * ((2 * Math.PI) / points.length) - Math.PI / 2)
           "
           :y2="
             center +
             maxRadius *
-              Math.sin(
-                i * ((2 * Math.PI) / points.length) - Math.PI / 2,
-              )
+              Math.sin(i * ((2 * Math.PI) / points.length) - Math.PI / 2)
           "
           class="axis-line"
         />
 
         <!-- Data area -->
-        <polygon
-          :points="polygonPoints"
-          class="data-shape"
-        />
+        <polygon :points="polygonPoints" class="data-shape" />
 
-        <polygon
-          :points="polygonPoints"
-          class="data-outline"
-        />
+        <polygon :points="polygonPoints" class="data-outline" />
 
         <!-- Points -->
-        <g
-          v-for="(p, i) in points"
-          :key="'point-' + i"
-        >
-          <circle
-            :cx="p.x"
-            :cy="p.y"
-            r="7"
-            class="data-point-glow"
-          />
+        <g v-for="(p, i) in points" :key="'point-' + i">
+          <circle :cx="p.x" :cy="p.y" r="7" class="data-point-glow" />
 
-          <circle
-            :cx="p.x"
-            :cy="p.y"
-            r="4"
-            class="data-point"
-          />
+          <circle :cx="p.x" :cy="p.y" r="4" class="data-point" />
         </g>
 
         <!-- Labels -->
-        <g
-          v-for="(p, i) in points"
-          :key="'label-' + i"
-        >
+        <g v-for="(p, i) in points" :key="'label-' + i">
           <text
             :x="p.labelX"
             :y="p.labelY"

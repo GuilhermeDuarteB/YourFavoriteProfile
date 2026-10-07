@@ -157,8 +157,11 @@ components:
         score:
           oneOf:
             - type: number
+              minimum: 0
+              exclusiveMinimum: true
+              maximum: 10
             - type: string
-          description: PostgreSQL numeric scores may be serialized as strings.
+          description: Scores are greater than 0 and at most 10. PostgreSQL numeric scores may be serialized as strings.
         comment:
           type: string
           nullable: true
@@ -195,6 +198,7 @@ components:
         score:
           type: number
           minimum: 0
+          exclusiveMinimum: true
           maximum: 10
         comment:
           type: string
@@ -435,6 +439,7 @@ components:
           type: number
           format: float
           minimum: 0
+          exclusiveMinimum: true
           maximum: 10
           example: 8.5
 
@@ -1296,6 +1301,7 @@ paths:
                   type: number
                   format: float
                   minimum: 0
+                  exclusiveMinimum: true
                   maximum: 10
                   example: 8.5
 
@@ -1416,6 +1422,7 @@ paths:
                   type: number
                   format: float
                   minimum: 0
+                  exclusiveMinimum: true
                   maximum: 10
                   example: 9
 

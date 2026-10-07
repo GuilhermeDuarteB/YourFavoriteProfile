@@ -76,6 +76,11 @@ export async function postReview(req, res) {
 
     res.status(201).json(review);
   } catch (err) {
+    if (err.code === "23505" && ["reviews_user_media_unique", "reviews_user_episode_unique"].includes(err.constraint)) {
+      return res.status(409).json({
+        error: "You already reviewed this — edit your existing review instead.",
+      });
+    }
     console.error(err);
     res.status(500).json({ error: "Error creating review" });
   }

@@ -164,7 +164,14 @@ watch(() => route.params.username, loadProfile, { immediate: true });
       <section class="section">
         <div class="section-head">
           <h2><span class="bar"></span>Recent reviews</h2>
-          <router-link :to="{ name: 'user-reviews', params: { username: profile.username } }" class="all-reviews-link">View all reviews →</router-link>
+          <router-link
+            :to="{
+              name: 'user-reviews',
+              params: { username: profile.username },
+            }"
+            class="all-reviews-link"
+            >View all reviews →</router-link
+          >
         </div>
         <div v-if="profile.recentReviews.length === 0" class="empty-state">
           No reviews yet.
@@ -184,7 +191,10 @@ watch(() => route.params.username, loadProfile, { immediate: true });
             <div class="review-info">
               <div class="review-title">{{ r.title }}</div>
               <div v-if="r.episode_id" class="review-comment">
-                S{{ String(r.season_number).padStart(2, '0') }}E{{ String(r.episode_number).padStart(2, '0') }} · {{ r.episode_title }}
+                S{{ String(r.season_number).padStart(2, "0") }}E{{
+                  String(r.episode_number).padStart(2, "0")
+                }}
+                · {{ r.episode_title }}
               </div>
               <div class="review-comment" v-if="r.comment">{{ r.comment }}</div>
               <div class="review-comment placeholder" v-else>
@@ -227,7 +237,11 @@ watch(() => route.params.username, loadProfile, { immediate: true });
           </p>
           <router-link
             v-if="isOwnProfile"
-            :to="{ path: '/settings', query: { section: 'profile' }, hash: '#top-five' }"
+            :to="{
+              path: '/settings',
+              query: { section: 'profile' },
+              hash: '#top-five',
+            }"
             class="btn"
             >Set your top 5</router-link
           >
@@ -263,9 +277,22 @@ watch(() => route.params.username, loadProfile, { immediate: true });
 .page {
   min-height: 100vh;
 }
-.section-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-.all-reviews-link { margin-left: auto; font-size: 13px; color: var(--blue); }
-.all-reviews-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.all-reviews-link {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--blue);
+}
+.all-reviews-link:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
 
 .state-message {
   text-align: center;

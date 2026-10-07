@@ -100,10 +100,15 @@ export async function getReviewsByUser(userId, limit = 6) {
   return result.rows;
 }
 
-export async function getUserReviewPage(userId, { type, genre, minScore, sort = "newest", page = 1, pageSize = 20 }) {
+export async function getUserReviewPage(
+  userId,
+  { type, genre, minScore, sort = "newest", page = 1, pageSize = 20 },
+) {
   const ordering = {
-    newest: '"createdAt" DESC, id DESC', oldest: '"createdAt" ASC, id ASC',
-    highest: 'score DESC, "createdAt" DESC, id DESC', lowest: 'score ASC, "createdAt" DESC, id DESC',
+    newest: '"createdAt" DESC, id DESC',
+    oldest: '"createdAt" ASC, id ASC',
+    highest: 'score DESC, "createdAt" DESC, id DESC',
+    lowest: 'score ASC, "createdAt" DESC, id DESC',
   };
   const result = await pools.query(
     `WITH user_reviews AS (
@@ -131,12 +136,26 @@ export async function getUserReviewPage(userId, { type, genre, minScore, sort = 
       COALESCE((SELECT json_agg(genre ORDER BY genre) FROM (
         SELECT DISTINCT unnest(genres) AS genre FROM user_reviews
       ) genre_options WHERE genre IS NOT NULL AND genre <> ''), '[]'::json) AS "availableGenres"`,
-    [userId, type || null, genre || null, minScore ?? null, pageSize, (page - 1) * pageSize],
+    [
+      userId,
+      type || null,
+      genre || null,
+      minScore ?? null,
+      pageSize,
+      (page - 1) * pageSize,
+    ],
   );
   const row = result.rows[0];
   const total = Number(row.total);
-  return { reviews: row.reviews, page, pageSize, total, totalPages: Math.ceil(total / pageSize),
-    totalUserReviews: Number(row.totalUserReviews), availableGenres: row.availableGenres };
+  return {
+    reviews: row.reviews,
+    page,
+    pageSize,
+    total,
+    totalPages: Math.ceil(total / pageSize),
+    totalUserReviews: Number(row.totalUserReviews),
+    availableGenres: row.availableGenres,
+  };
 }
 
 //existent review

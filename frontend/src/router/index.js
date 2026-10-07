@@ -60,7 +60,11 @@ const routes = [
         : "/login";
     },
   },
-  { path: "/:username/reviews", name: "user-reviews", component: UserReviewsView },
+  {
+    path: "/:username/reviews",
+    name: "user-reviews",
+    component: UserReviewsView,
+  },
   { path: "/:username", name: "profile", component: ProfileView },
   { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundView },
 ];

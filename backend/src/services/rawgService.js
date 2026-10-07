@@ -10,7 +10,8 @@ const rawg = axios.create({
 
 export async function searchRawg(query, genre = "all") {
   const params = { search: query };
-  if (Object.hasOwn(RAWG_GENRE_SLUGS, genre)) params.genres = RAWG_GENRE_SLUGS[genre];
+  if (Object.hasOwn(RAWG_GENRE_SLUGS, genre))
+    params.genres = RAWG_GENRE_SLUGS[genre];
   const res = await rawg.get("/games", {
     params,
   });
@@ -73,10 +74,13 @@ export async function discoverGames({
     page_size: pageSize,
   };
   // Themes such as drama, comedy, sci-fi and horror have no shared genre mapping.
-  if (Object.hasOwn(RAWG_GENRE_SLUGS, genre)) params.genres = RAWG_GENRE_SLUGS[genre];
+  if (Object.hasOwn(RAWG_GENRE_SLUGS, genre))
+    params.genres = RAWG_GENRE_SLUGS[genre];
   const res = await rawg.get("/games", { params });
   const filtered = minRating
-    ? res.data.results.filter((g) => g.rating != null && g.rating * 2 >= minRating)
+    ? res.data.results.filter(
+        (g) => g.rating != null && g.rating * 2 >= minRating,
+      )
     : res.data.results;
   return { results: filtered, hasMore: !!res.data.next };
 }

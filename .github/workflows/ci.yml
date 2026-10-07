@@ -14,7 +14,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: yarn
           cache-dependency-path: |
             backend/yarn.lock
@@ -42,3 +42,37 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: yarn build
+
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: integration-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+          cache-dependency-path: backend/yarn.lock
+      - name: Enable Yarn
+        run: corepack enable
+      - name: Install backend dependencies
+        working-directory: backend
+        run: yarn install --frozen-lockfile
+      - name: Test migrations and concurrent database writes
+        working-directory: backend
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:integration-only@localhost:5432/postgres
+        run: yarn test:db

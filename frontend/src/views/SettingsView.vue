@@ -15,7 +15,9 @@ const router = useRouter();
 const sections = ["profile", "account", "security", "danger"];
 
 function normalizeSection(value) {
-  return typeof value === "string" && sections.includes(value) ? value : "profile";
+  return typeof value === "string" && sections.includes(value)
+    ? value
+    : "profile";
 }
 
 const activeSection = computed(() => normalizeSection(route.query.section));
@@ -25,7 +27,10 @@ function selectSection(section) {
   router.push({
     name: "settings",
     query: { section: nextSection },
-    hash: nextSection === "profile" && route.hash === "#top-five" ? "#top-five" : "",
+    hash:
+      nextSection === "profile" && route.hash === "#top-five"
+        ? "#top-five"
+        : "",
   });
 }
 
@@ -46,9 +51,16 @@ watch(
 watch(
   [activeSection, () => route.hash],
   async ([section, hash]) => {
-    if (section !== "profile" || hash !== "#top-five" || typeof document === "undefined") return;
+    if (
+      section !== "profile" ||
+      hash !== "#top-five" ||
+      typeof document === "undefined"
+    )
+      return;
     await nextTick();
-    document.getElementById("top-five")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById("top-five")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   },
   { immediate: true },
 );
@@ -66,9 +78,15 @@ watch(
       </header>
 
       <div class="settings-layout">
-        <SettingsSidebar :active-section="activeSection" @select="selectSection" />
+        <SettingsSidebar
+          :active-section="activeSection"
+          @select="selectSection"
+        />
 
-        <section class="settings-content" :aria-labelledby="`${activeSection}-settings-heading`">
+        <section
+          class="settings-content"
+          :aria-labelledby="`${activeSection}-settings-heading`"
+        >
           <ProfileSettings v-if="activeSection === 'profile'" />
           <AccountSettings v-else-if="activeSection === 'account'" />
           <SecuritySettings v-else-if="activeSection === 'security'" />

@@ -11,23 +11,33 @@ import { useAuthStore } from "../stores/authStore";
 
 const authStore = useAuthStore();
 const route = useRoute();
-const watchlistOnly = ref(authStore.isAuthenticated && route.query.watchlist === "true");
-const watchlistEnabled = computed(() => authStore.isAuthenticated && watchlistOnly.value);
+const watchlistOnly = ref(
+  authStore.isAuthenticated && route.query.watchlist === "true",
+);
+const watchlistEnabled = computed(
+  () => authStore.isAuthenticated && watchlistOnly.value,
+);
 const router = useRouter();
 
 const selectedTypes = ref(
   typeof route.query.types === "string"
-    ? route.query.types.split(",").filter((type) => ["movie", "series", "game"].includes(type))
+    ? route.query.types
+        .split(",")
+        .filter((type) => ["movie", "series", "game"].includes(type))
     : ["movie", "series", "game"],
 );
 const selectedGenre = ref(route.query.genre || "all");
 const genreOptions = computed(() => getGenreOptions(selectedTypes.value));
 const allTypesSelected = computed(() =>
-  ["movie", "series", "game"].every((type) => selectedTypes.value.includes(type)),
+  ["movie", "series", "game"].every((type) =>
+    selectedTypes.value.includes(type),
+  ),
 );
 
 function normalizeGenre() {
-  if (!genreOptions.value.some((option) => option.value === selectedGenre.value)) {
+  if (
+    !genreOptions.value.some((option) => option.value === selectedGenre.value)
+  ) {
     selectedGenre.value = "all";
   }
 }
@@ -82,11 +92,18 @@ function syncUrl() {
 
 function getWatchlist() {
   if (!watchlistPromise) {
-    const pending = api.get("/watchlist/me").then((res) =>
-      new Set(res.data.map((item) => item.type + ":" + String(item.external_id))),
-    );
+    const pending = api
+      .get("/watchlist/me")
+      .then(
+        (res) =>
+          new Set(
+            res.data.map((item) => item.type + ":" + String(item.external_id)),
+          ),
+      );
     watchlistPromise = pending;
-    pending.catch(() => { if (watchlistPromise === pending) watchlistPromise = null; });
+    pending.catch(() => {
+      if (watchlistPromise === pending) watchlistPromise = null;
+    });
   }
   return watchlistPromise;
 }
@@ -102,9 +119,12 @@ async function loadResults() {
   if (selectedTypes.value.length === 0) return;
   loading.value = true;
   const params = {
-    types: selectedTypes.value.join(","), query: searchQuery.value.trim(),
-    genre: selectedGenre.value, decade: selectedDecade.value,
-    minRating: minRating.value, sortBy: sortBy.value,
+    types: selectedTypes.value.join(","),
+    query: searchQuery.value.trim(),
+    genre: selectedGenre.value,
+    decade: selectedDecade.value,
+    minRating: minRating.value,
+    sortBy: sortBy.value,
   };
   try {
     if (watchlistEnabled.value) {
@@ -119,12 +139,16 @@ async function loadResults() {
         while (more && scanned < WATCHLIST_SCAN_PAGES) {
           let res;
           try {
-            res = await api.get("/media/discover", { params: { ...params, page: scanned + 1 } });
+            res = await api.get("/media/discover", {
+              params: { ...params, page: scanned + 1 },
+            });
           } catch (err) {
             if (id !== requestId) return;
             if (!scanned) throw err;
             console.error("Watchlist Browse scan failed:", err);
-            messages.add("Some Browse pages could not be loaded. Showing matches from the pages checked successfully.");
+            messages.add(
+              "Some Browse pages could not be loaded. Showing matches from the pages checked successfully.",
+            );
             break;
           }
           if (id !== requestId) return;
@@ -137,24 +161,41 @@ async function loadResults() {
           more = res.data.hasMore;
         }
         const items = [...matches.values()];
-        if (params.sortBy === "rating") items.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-        if (params.sortBy === "title") items.sort((a, b) => a.title.localeCompare(b.title));
-        if (params.sortBy === "release_date") items.sort((a, b) => (b.releaseDate || b.meta || "").localeCompare(a.releaseDate || a.meta || ""));
+        if (params.sortBy === "rating")
+          items.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+        if (params.sortBy === "title")
+          items.sort((a, b) => a.title.localeCompare(b.title));
+        if (params.sortBy === "release_date")
+          items.sort((a, b) =>
+            (b.releaseDate || b.meta || "").localeCompare(
+              a.releaseDate || a.meta || "",
+            ),
+          );
         watchlistCache = { key, items, warnings: [...messages], scanned, more };
       }
       const cached = watchlistCache;
       const maxPage = Math.max(1, Math.ceil(cached.items.length / PAGE_SIZE));
-      if (currentPage.value > maxPage) { currentPage.value = maxPage; return; }
-      results.value = cached.items.slice((currentPage.value - 1) * PAGE_SIZE, currentPage.value * PAGE_SIZE);
+      if (currentPage.value > maxPage) {
+        currentPage.value = maxPage;
+        return;
+      }
+      results.value = cached.items.slice(
+        (currentPage.value - 1) * PAGE_SIZE,
+        currentPage.value * PAGE_SIZE,
+      );
       hasMore.value = currentPage.value < maxPage;
       warnings.value = cached.warnings;
       coverage.value = params.query
         ? "Watchlist matches within the first page of search results from each provider; this is not a full watchlist search."
         : cached.more
-          ? "Watchlist matches within the first " + cached.scanned + " Browse pages. More matches may exist beyond this limit."
+          ? "Watchlist matches within the first " +
+            cached.scanned +
+            " Browse pages. More matches may exist beyond this limit."
           : "Watchlist matches within the available Browse results.";
     } else {
-      const res = await api.get("/media/discover", { params: { ...params, page: currentPage.value } });
+      const res = await api.get("/media/discover", {
+        params: { ...params, page: currentPage.value },
+      });
       if (id !== requestId) return;
       results.value = res.data.results;
       hasMore.value = res.data.hasMore;
@@ -163,7 +204,8 @@ async function loadResults() {
   } catch (err) {
     if (id !== requestId) return;
     console.error("Browse results failed:", err);
-    error.value = err.response?.data?.error || "Unable to load results. Please try again.";
+    error.value =
+      err.response?.data?.error || "Unable to load results. Please try again.";
   } finally {
     if (id === requestId) loading.value = false;
   }
@@ -189,7 +231,14 @@ function scheduleResults(delay) {
 }
 
 watch(
-  [selectedTypes, selectedGenre, selectedDecade, sortBy, minRating, watchlistOnly],
+  [
+    selectedTypes,
+    selectedGenre,
+    selectedDecade,
+    sortBy,
+    minRating,
+    watchlistOnly,
+  ],
   () => scheduleResults(200),
   { deep: true },
 );
@@ -202,42 +251,79 @@ watch(currentPage, () => {
 
 watch(searchQuery, () => scheduleResults(400));
 
-watch(() => authStore.token, () => {
-  requestId++;
-  clearTimeout(debounceTimer);
-  watchlistPromise = null;
-  watchlistCache = null;
-  if (!authStore.isAuthenticated && watchlistOnly.value) watchlistOnly.value = false;
-  else loadResults();
-});
+watch(
+  () => authStore.token,
+  () => {
+    requestId++;
+    clearTimeout(debounceTimer);
+    watchlistPromise = null;
+    watchlistCache = null;
+    if (!authStore.isAuthenticated && watchlistOnly.value)
+      watchlistOnly.value = false;
+    else loadResults();
+  },
+);
 
-watch(() => route.query.watchlist, (value) => {
-  watchlistOnly.value = authStore.isAuthenticated && value === "true";
-});
+watch(
+  () => route.query.watchlist,
+  (value) => {
+    watchlistOnly.value = authStore.isAuthenticated && value === "true";
+  },
+);
 
-watch(() => [route.query.types, route.query.genre], ([types, genre]) => {
-  const nextTypes = typeof types === "string" ? types.split(",").filter(Boolean) : ["movie", "series", "game"];
-  if (nextTypes.join(",") !== selectedTypes.value.join(",")) selectedTypes.value = nextTypes;
-  selectedGenre.value = typeof genre === "string" ? genre : "all";
-  normalizeGenre();
-});
+watch(
+  () => [route.query.types, route.query.genre],
+  ([types, genre]) => {
+    const nextTypes =
+      typeof types === "string"
+        ? types.split(",").filter(Boolean)
+        : ["movie", "series", "game"];
+    if (nextTypes.join(",") !== selectedTypes.value.join(","))
+      selectedTypes.value = nextTypes;
+    selectedGenre.value = typeof genre === "string" ? genre : "all";
+    normalizeGenre();
+  },
+);
 
 onMounted(() => {
-  if ((!authStore.isAuthenticated && route.query.watchlist) || (route.query.genre && route.query.genre !== selectedGenre.value)) syncUrl();
+  if (
+    (!authStore.isAuthenticated && route.query.watchlist) ||
+    (route.query.genre && route.query.genre !== selectedGenre.value)
+  )
+    syncUrl();
   loadResults();
 });
-onBeforeUnmount(() => { requestId++; clearTimeout(debounceTimer); });
+onBeforeUnmount(() => {
+  requestId++;
+  clearTimeout(debounceTimer);
+});
 </script>
 
 <template>
   <div>
     <NavBar />
 
-        <div class="filter">
+    <div class="filter">
       <div class="search-bar">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="7" stroke-linecap="round" stroke-linejoin="round" />
-          <path d="m20 20-3.5-3.5" stroke-linecap="round" stroke-linejoin="round" />
+        <svg
+          class="search-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle
+            cx="11"
+            cy="11"
+            r="7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="m20 20-3.5-3.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
         <input
           v-model="searchQuery"
@@ -245,20 +331,71 @@ onBeforeUnmount(() => { requestId++; clearTimeout(debounceTimer); });
           placeholder="Search movies, series, and games..."
           class="search-input"
         />
-        <button v-if="searchQuery" type="button" class="clear-btn" @click="searchQuery = ''">
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="clear-btn"
+          @click="searchQuery = ''"
+        >
           ✕
         </button>
       </div>
 
       <section class="browse-by">
-
         <label class="filter-group">
           <span class="filter-label">Type</span>
           <div class="pill-row">
-            <button type="button" :class="['pill', { active: allTypesSelected }]" :aria-pressed="allTypesSelected" @click="selectedTypes = ['movie', 'series', 'game']">All types</button>
-            <button type="button" :class="['pill', { active: !allTypesSelected && selectedTypes.includes('movie') }]" :aria-pressed="!allTypesSelected && selectedTypes.includes('movie')" @click="toggleType('movie')">Movies</button>
-            <button type="button" :class="['pill', { active: !allTypesSelected && selectedTypes.includes('series') }]" :aria-pressed="!allTypesSelected && selectedTypes.includes('series')" @click="toggleType('series')">Series</button>
-            <button type="button" :class="['pill', { active: !allTypesSelected && selectedTypes.includes('game') }]" :aria-pressed="!allTypesSelected && selectedTypes.includes('game')" @click="toggleType('game')">Games</button>
+            <button
+              type="button"
+              :class="['pill', { active: allTypesSelected }]"
+              :aria-pressed="allTypesSelected"
+              @click="selectedTypes = ['movie', 'series', 'game']"
+            >
+              All types
+            </button>
+            <button
+              type="button"
+              :class="[
+                'pill',
+                {
+                  active: !allTypesSelected && selectedTypes.includes('movie'),
+                },
+              ]"
+              :aria-pressed="
+                !allTypesSelected && selectedTypes.includes('movie')
+              "
+              @click="toggleType('movie')"
+            >
+              Movies
+            </button>
+            <button
+              type="button"
+              :class="[
+                'pill',
+                {
+                  active: !allTypesSelected && selectedTypes.includes('series'),
+                },
+              ]"
+              :aria-pressed="
+                !allTypesSelected && selectedTypes.includes('series')
+              "
+              @click="toggleType('series')"
+            >
+              Series
+            </button>
+            <button
+              type="button"
+              :class="[
+                'pill',
+                { active: !allTypesSelected && selectedTypes.includes('game') },
+              ]"
+              :aria-pressed="
+                !allTypesSelected && selectedTypes.includes('game')
+              "
+              @click="toggleType('game')"
+            >
+              Games
+            </button>
           </div>
           <span class="type-hint">Choose a type, then add others.</span>
         </label>
@@ -267,7 +404,13 @@ onBeforeUnmount(() => { requestId++; clearTimeout(debounceTimer); });
           <span class="filter-label">Genre</span>
           <select v-model="selectedGenre" class="filter-select">
             <option value="all">All genres</option>
-            <option v-for="option in genreOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+            <option
+              v-for="option in genreOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
           </select>
         </label>
 
@@ -294,7 +437,14 @@ onBeforeUnmount(() => { requestId++; clearTimeout(debounceTimer); });
         <label class="filter-group">
           <span class="filter-label">Minimum rating</span>
           <div class="rating-row">
-            <input type="range" v-model="minRating" min="0" max="10" step="0.5" class="rating-slider" />
+            <input
+              type="range"
+              v-model="minRating"
+              min="0"
+              max="10"
+              step="0.5"
+              class="rating-slider"
+            />
             <span class="rating-value">{{ minRating }}+</span>
           </div>
         </label>
@@ -318,17 +468,35 @@ onBeforeUnmount(() => { requestId++; clearTimeout(debounceTimer); });
 
     <section class="results">
       <p v-if="watchlistEnabled" class="filter-note">
-        Matches use your saved watchlist and up to five Browse pages, not the entire catalogue.
-        <router-link :to="{ name: 'user-watchlist', params: { username: authStore.user.username } }">View your full watchlist</router-link>
+        Matches use your saved watchlist and up to five Browse pages, not the
+        entire catalogue.
+        <router-link
+          :to="{
+            name: 'user-watchlist',
+            params: { username: authStore.user.username },
+          }"
+          >View your full watchlist</router-link
+        >
       </p>
       <p v-if="coverage" class="filter-note">{{ coverage }}</p>
-      <p v-for="warning in warnings" :key="warning" class="filter-note" role="status">{{ warning }}</p>
+      <p
+        v-for="warning in warnings"
+        :key="warning"
+        class="filter-note"
+        role="status"
+      >
+        {{ warning }}
+      </p>
       <div v-if="loading" class="state-message">Loading...</div>
       <div v-else-if="error" class="state-message" role="alert">
         {{ error }} <button class="page-btn" @click="loadResults">Retry</button>
       </div>
       <div v-else-if="results.length === 0" class="state-message">
-        {{ watchlistEnabled ? "No watchlist matches in the checked results." : "No results found." }}
+        {{
+          watchlistEnabled
+            ? "No watchlist matches in the checked results."
+            : "No results found."
+        }}
       </div>
       <div v-else class="grid">
         <MediaCard
@@ -338,7 +506,14 @@ onBeforeUnmount(() => { requestId++; clearTimeout(debounceTimer); });
         />
       </div>
 
-      <div class="pagination" v-if="!loading && !error && (results.length > 0 || hasMore || currentPage > 1)">
+      <div
+        class="pagination"
+        v-if="
+          !loading &&
+          !error &&
+          (results.length > 0 || hasMore || currentPage > 1)
+        "
+      >
         <button
           class="page-btn"
           :disabled="currentPage === 1"
@@ -362,8 +537,14 @@ onBeforeUnmount(() => { requestId++; clearTimeout(debounceTimer); });
 </template>
 
 <style scoped>
-.filter-note { color: var(--text-mute); font-size: 13px; margin-bottom: 12px; }
-.filter-note a { color: var(--blue); }
+.filter-note {
+  color: var(--text-mute);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.filter-note a {
+  color: var(--blue);
+}
 .filter {
   padding: 32px 56px;
   border-bottom: 1px solid var(--border);
@@ -565,7 +746,9 @@ onBeforeUnmount(() => { requestId++; clearTimeout(debounceTimer); });
   padding: 16px 44px;
   font-size: 15px;
   color: var(--text);
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .search-input::placeholder {

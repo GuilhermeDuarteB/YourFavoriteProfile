@@ -80,9 +80,16 @@ watch(() => authStore.user?.username, loadCurrentProfile);
       </div>
 
       <p v-if="profileError" class="error" role="alert">{{ profileError }}</p>
-      <p v-if="profileSuccess" class="success" role="status">{{ profileSuccess }}</p>
+      <p v-if="profileSuccess" class="success" role="status">
+        {{ profileSuccess }}
+      </p>
 
-      <button class="btn btn-primary" type="button" :disabled="profileSaving" @click="saveProfile">
+      <button
+        class="btn btn-primary"
+        type="button"
+        :disabled="profileSaving"
+        @click="saveProfile"
+      >
         {{ profileSaving ? "Saving..." : "Save profile" }}
       </button>
     </section>
@@ -200,8 +207,12 @@ watch(() => authStore.user?.username, loadCurrentProfile);
   font-size: 12.5px;
 }
 
-.error { color: #f27272; }
-.success { color: #3ecf8e; }
+.error {
+  color: #f27272;
+}
+.success {
+  color: #3ecf8e;
+}
 
 @media (max-width: 480px) {
   .settings-card {

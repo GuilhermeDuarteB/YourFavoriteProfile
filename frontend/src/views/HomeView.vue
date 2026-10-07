@@ -21,12 +21,14 @@ onMounted(async () => {
     api.get("/media/trending"),
     api.get("/media/latest-episodes"),
   ]);
-  if (trendingRes.status === "fulfilled") trending.value = trendingRes.value.data;
+  if (trendingRes.status === "fulfilled")
+    trending.value = trendingRes.value.data;
   else {
     trendingError.value = "Trending media is temporarily unavailable.";
     console.error("Home trending failed:", trendingRes.reason);
   }
-  if (episodesRes.status === "fulfilled") latestEpisodes.value = episodesRes.value.data;
+  if (episodesRes.status === "fulfilled")
+    latestEpisodes.value = episodesRes.value.data;
   else {
     episodesError.value = "Latest episode data is temporarily unavailable.";
     console.error("Home latest episodes failed:", episodesRes.reason);
@@ -49,9 +51,7 @@ const heroPosters = computed(() =>
     <div class="hero">
       <div>
         <div class="eyebrow">Episode-by-episode ratings</div>
-        <h1>
-          Rate every episode.<br />Build your <span>series score</span>.
-        </h1>
+        <h1>Rate every episode.<br />Build your <span>series score</span>.</h1>
         <p>
           Movies, series, and games in one place. Episode-by-episode reviewing
           and automatic series scoring are currently in development.
@@ -68,19 +68,28 @@ const heroPosters = computed(() =>
           >
         </div>
       </div>
-      <HeroVisual
-        v-if="heroPosters.length"
-        :posters="heroPosters"
-      />
+      <HeroVisual v-if="heroPosters.length" :posters="heroPosters" />
     </div>
 
-    <div v-if="loading" class="home-state" role="status">Loading your media feed...</div>
-    <p v-else-if="trendingError && !trending.length" class="home-state" role="alert">{{ trendingError }}</p>
-    <p v-else-if="!trending.length" class="home-state">No trending media is available right now.</p>
+    <div v-if="loading" class="home-state" role="status">
+      Loading your media feed...
+    </div>
+    <p
+      v-else-if="trendingError && !trending.length"
+      class="home-state"
+      role="alert"
+    >
+      {{ trendingError }}
+    </p>
+    <p v-else-if="!trending.length" class="home-state">
+      No trending media is available right now.
+    </p>
     <TrendingGrid v-else :items="trending" />
 
     <EpisodeBreakdown v-if="latestEpisodes.length" :episodes="latestEpisodes" />
-    <p v-else-if="episodesError" class="home-note" role="status">{{ episodesError }}</p>
+    <p v-else-if="episodesError" class="home-note" role="status">
+      {{ episodesError }}
+    </p>
 
     <Footer />
   </div>
@@ -165,10 +174,18 @@ const heroPosters = computed(() =>
     padding: 40px 24px 32px;
     gap: 28px;
   }
-  .hero h1 { font-size: 36px; }
-  .hero p { font-size: 14px; }
-  .hero-actions { flex-wrap: wrap; }
+  .hero h1 {
+    font-size: 36px;
+  }
+  .hero p {
+    font-size: 14px;
+  }
+  .hero-actions {
+    flex-wrap: wrap;
+  }
   .home-state,
-  .home-note { padding: 32px 24px; }
+  .home-note {
+    padding: 32px 24px;
+  }
 }
 </style>

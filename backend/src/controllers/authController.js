@@ -12,6 +12,8 @@ import {
 } from "../models/userModel.js";
 
 const SALT_ROUNDS = 10;
+const isEmailConflict = (err) => err.code === "23505" &&
+  ["users_email_normalized_unique", "users_email_key"].includes(err.constraint);
 
 export async function register(req, res) {
   try {
@@ -38,6 +40,7 @@ export async function register(req, res) {
     });
     res.status(201).json({ user, token });
   } catch (err) {
+    if (isEmailConflict(err)) return res.status(409).json({ error: "Email already in use" });
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
@@ -103,6 +106,7 @@ export async function updateEmail(req, res) {
     const updated = await updateUserEmail(req.userId, newEmail);
     res.json(updated);
   } catch (err) {
+    if (isEmailConflict(err)) return res.status(409).json({ error: "Email already in use" });
     console.error(err);
     res.status(500).json({ error: "Error updating email" });
   }

@@ -3,21 +3,40 @@ import { onBeforeUnmount, onMounted, ref } from "vue";
 const emit = defineEmits(["close"]);
 const box = ref(null);
 let previousFocus;
-const focusable = () => [...(box.value?.querySelectorAll('button:not(:disabled), a[href], input, textarea, select, [tabindex="0"]') || [])];
+const focusable = () => [
+  ...(box.value?.querySelectorAll(
+    'button:not(:disabled), a[href], input, textarea, select, [tabindex="0"]',
+  ) || []),
+];
 function onKeydown(event) {
-  if (event.key === "Escape") { event.preventDefault(); emit("close"); }
+  if (event.key === "Escape") {
+    event.preventDefault();
+    emit("close");
+  }
   if (event.key !== "Tab") return;
   const controls = focusable();
   const first = controls[0];
   const last = controls.at(-1);
-  if (!first) { event.preventDefault(); box.value?.focus(); return; }
-  if (event.shiftKey && (document.activeElement === first || document.activeElement === box.value)) {
-    event.preventDefault(); last.focus();
+  if (!first) {
+    event.preventDefault();
+    box.value?.focus();
+    return;
+  }
+  if (
+    event.shiftKey &&
+    (document.activeElement === first || document.activeElement === box.value)
+  ) {
+    event.preventDefault();
+    last.focus();
   } else if (!event.shiftKey && document.activeElement === last) {
-    event.preventDefault(); first.focus();
+    event.preventDefault();
+    first.focus();
   }
 }
-onMounted(() => { previousFocus = document.activeElement; box.value?.focus(); });
+onMounted(() => {
+  previousFocus = document.activeElement;
+  box.value?.focus();
+});
 onBeforeUnmount(() => previousFocus?.focus());
 </script>
 
@@ -25,8 +44,22 @@ onBeforeUnmount(() => previousFocus?.focus());
   <Teleport to="body">
     <Transition name="modal" appear>
       <div class="modal-overlay" @click.self="$emit('close')">
-        <div ref="box" class="modal-box" role="dialog" aria-modal="true" aria-label="Review editor" tabindex="-1" @keydown="onKeydown">
-          <button class="modal-close" aria-label="Close review editor" @click="$emit('close')">✕</button>
+        <div
+          ref="box"
+          class="modal-box"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Review editor"
+          tabindex="-1"
+          @keydown="onKeydown"
+        >
+          <button
+            class="modal-close"
+            aria-label="Close review editor"
+            @click="$emit('close')"
+          >
+            ✕
+          </button>
           <slot></slot>
         </div>
       </div>
@@ -72,7 +105,10 @@ onBeforeUnmount(() => previousFocus?.focus());
 .modal-close:hover {
   color: var(--text);
 }
-.modal-close:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.modal-close:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
 
 .modal-enter-active,
 .modal-leave-active {
