@@ -47,14 +47,21 @@ function search() {
       >⚙</router-link>
     </div>
     <div class="nav-right">
-      <input
-        v-model="searchQuery"
-        @keydown.enter.prevent="search"
-        aria-label="Search titles and users"
-        class="search-pill"
-        type="text"
-        placeholder="Search titles, users..."
-      />
+      <form class="search-form" role="search" aria-label="Global site search" @submit.prevent="search">
+        <input
+          v-model="searchQuery"
+          aria-label="Search media or users"
+          class="search-pill"
+          type="search"
+          placeholder="Search media or users..."
+        />
+        <button type="submit" class="search-submit" aria-label="Search" title="Search media or users">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="10.5" cy="10.5" r="6.5" />
+            <path d="m16 16 4 4" />
+          </svg>
+        </button>
+      </form>
       <template v-if="authStore.isAuthenticated">
         <router-link
           class="btn btn-primary"
@@ -130,17 +137,36 @@ nav {
   display: flex;
   align-items: center;
   gap: 18px;
+  min-width: 0;
 }
 
-.search-pill {
+.search-form {
+  display: flex;
+  align-items: center;
+  flex: 0 1 250px;
+  min-width: 0;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 9px 16px;
+  padding: 3px;
+}
+.search-form:focus-within { outline: 2px solid var(--blue); outline-offset: 2px; }
+.search-pill {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 10px;
   font-size: 13px;
   color: var(--text);
-  width: 220px;
+  outline: none;
 }
+.search-submit { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 32px; height: 32px; border: 0; border-radius: 50%; background: var(--blue); color: #fff; cursor: pointer; }
+.search-submit svg { width: 17px; height: 17px; }
+.search-submit:hover { filter: brightness(1.15); }
+.search-submit:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 
 .btn {
   padding: 9px 18px;
@@ -149,6 +175,11 @@ nav {
   font-weight: 600;
   border: 1px solid var(--border);
   color: var(--text);
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .btn-primary {
@@ -158,16 +189,16 @@ nav {
 }
 @media (max-width: 1100px) {
   nav { flex-wrap: wrap; gap: 14px; padding: 16px 24px; }
-  .nav-links { order: 3; width: 100%; gap: 20px; overflow-x: auto; padding-bottom: 2px; }
+  .nav-links { order: 3; width: 100%; gap: 20px; overflow-x: auto; padding-bottom: 2px; white-space: nowrap; }
   .nav-right { flex: 1; justify-content: flex-end; gap: 10px; min-width: 0; }
-  .search-pill { width: min(220px, 35vw); }
+  .search-form { flex: 1 1 220px; }
 }
 @media (max-width: 620px) {
   nav { padding: 14px 16px; }
   .brand { font-size: 16px; }
-  .nav-right { width: 100%; order: 2; justify-content: stretch; }
-  .search-pill { width: auto; flex: 1; min-width: 0; }
+  .nav-right { flex: 0 0 100%; width: 100%; order: 2; justify-content: stretch; flex-wrap: wrap; }
+  .search-form { flex: 1 1 170px; }
   .nav-links { order: 3; gap: 16px; font-size: 13px; }
-  .btn { padding: 8px 12px; }
+  .btn { padding: 8px 12px; max-width: 130px; }
 }
 </style>

@@ -1,4 +1,5 @@
 import { validateReview } from "../utils/validation.js";
+import { findMediaById, findEpisodeById } from "../models/mediaModel.js";
 import {
   createReview,
   getReviewsByMedia,
@@ -18,18 +19,38 @@ export async function postReview(req, res) {
     const { mediaId, episodeId, score, comment } = req.body || {};
     const userId = req.userId;
 
-    if (!mediaId && !episodeId) {
+    const hasMedia = mediaId != null;
+    const hasEpisode = episodeId != null;
+    if (!hasMedia && !hasEpisode) {
       return res
         .status(400)
         .json({ error: "mediaId or episodeId is required" });
     }
-    if (mediaId && episodeId) {
+    if (hasMedia && hasEpisode) {
       return res
         .status(400)
         .json({ error: "Provide either mediaId or episodeId, not both" });
     }
     const validationError = validateReview(score, comment);
     if (validationError) return res.status(400).json({ error: validationError });
+
+    const targetId = hasMedia ? mediaId : episodeId;
+    if (!["number", "string"].includes(typeof targetId) || !/^\d+$/.test(String(targetId)) || !Number.isSafeInteger(Number(targetId)) || Number(targetId) <= 0) {
+      return res.status(400).json({ error: "Media or episode ID must be a positive integer" });
+    }
+    if (mediaId) {
+      const media = await findMediaById(mediaId);
+      if (!media) return res.status(404).json({ error: "Media not found" });
+      if (media.type === "series") {
+        return res.status(400).json({ error: "Series must be reviewed by episode" });
+      }
+      if (!["movie", "game"].includes(media.type)) {
+        return res.status(400).json({ error: "Only movies and games support direct reviews" });
+      }
+    } else {
+      const episode = await findEpisodeById(episodeId);
+      if (!episode) return res.status(404).json({ error: "Episode not found" });
+    }
 
     const existing = await findExistingReview({ userId, mediaId, episodeId });
     if (existing) {

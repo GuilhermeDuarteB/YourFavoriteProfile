@@ -78,6 +78,7 @@ function formatDate(d) {
 
 .review-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   margin-bottom: 4px;
@@ -102,6 +103,7 @@ function formatDate(d) {
 }
 
 .review-comment {
+  overflow-wrap: anywhere;
   font-size: 13px;
   color: var(--text-dim);
   line-height: 1.5;

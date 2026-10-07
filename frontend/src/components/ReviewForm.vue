@@ -5,12 +5,13 @@ import StarRating from "./StarRating.vue";
 
 const props = defineProps({
   mediaId: [Number, String],
+  episodeId: [Number, String],
   existingReview: Object,
 });
 
 const emit = defineEmits(["saved", "cancel"]);
 
-const score = ref(props.existingReview?.score || 0);
+const score = ref(Number(props.existingReview?.score ?? 0));
 const comment = ref(props.existingReview?.comment || "");
 const saving = ref(false);
 const error = ref("");
@@ -18,12 +19,13 @@ const error = ref("");
 watch(
   () => props.existingReview,
   (val) => {
-    score.value = val?.score || 0;
+    score.value = Number(val?.score ?? 0);
     comment.value = val?.comment || "";
   },
 );
 
 async function submit() {
+  if (saving.value) return;
   error.value = "";
   if (score.value <= 0) {
     error.value = "Pick a star rating first.";
@@ -38,8 +40,12 @@ async function submit() {
         comment: comment.value,
       });
     } else {
+      if (!!props.mediaId === !!props.episodeId) {
+        error.value = "Choose exactly one media item or episode to review.";
+        return;
+      }
       res = await api.post("/reviews", {
-        mediaId: props.mediaId,
+        ...(props.episodeId ? { episodeId: props.episodeId } : { mediaId: props.mediaId }),
         score: Number(score.value),
         comment: comment.value,
       });
@@ -60,12 +66,13 @@ async function submit() {
     <StarRating v-model="score" />
 
     <textarea
+      aria-label="Review comment"
       v-model="comment"
       placeholder="What did you think? (optional)"
       maxlength="1000"
     ></textarea>
 
-    <p v-if="error" class="error">{{ error }}</p>
+    <p v-if="error" class="error" role="alert">{{ error }}</p>
 
     <div class="form-actions">
       <button class="btn btn-primary" :disabled="saving" @click="submit">
@@ -77,7 +84,7 @@ async function submit() {
               : "Post review"
         }}
       </button>
-      <button class="btn" @click="emit('cancel')">Cancel</button>
+      <button class="btn" :disabled="saving" @click="emit('cancel')">Cancel</button>
     </div>
   </div>
 </template>
@@ -109,6 +116,7 @@ textarea {
 }
 .form-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 14px;
 }
@@ -131,4 +139,5 @@ textarea {
   opacity: 0.6;
   cursor: not-allowed;
 }
+.btn:focus-visible, textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 </style>

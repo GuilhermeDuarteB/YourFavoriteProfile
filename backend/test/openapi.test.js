@@ -22,11 +22,13 @@ test("OpenAPI document parses and covers the mounted API groups", () => {
     "/api/auth/me/username",
     "/api/auth/me",
     "/api/users/search",
+    "/api/users/{username}/reviews",
     "/api/users/{username}",
     "/api/users/me",
     "/api/media/trending",
     "/api/media/latest-episodes",
     "/api/media/discover",
+    "/api/media/series/{id}/season/{seasonNumber}",
     "/api/media/{type}/{id}",
     "/api/reviews",
     "/api/reviews/media/{mediaId}",
@@ -71,9 +73,11 @@ test("OpenAPI document parses and covers the mounted API groups", () => {
     ["/api/auth/register", "post"],
     ["/api/auth/login", "post"],
     ["/api/users/search", "get"],
+    ["/api/users/{username}/reviews", "get"],
     ["/api/media/trending", "get"],
     ["/api/media/latest-episodes", "get"],
     ["/api/media/discover", "get"],
+    ["/api/media/series/{id}/season/{seasonNumber}", "get"],
     ["/api/media/{type}/{id}", "get"],
     ["/api/reviews/media/{mediaId}", "get"],
     ["/api/reviews/episode/{episodeId}", "get"],
@@ -86,4 +90,34 @@ test("OpenAPI document parses and covers the mounted API groups", () => {
     {},
     { bearerAuth: [] },
   ]);
+});
+
+test("documented methods match Express routes and all schema references resolve", async () => {
+  const document = YAML.parse(fs.readFileSync(openApiPath, "utf8"));
+  const actual = [];
+  for (const [prefix, file] of [
+    ["auth", "authRoutes"], ["users", "userRoutes"], ["media", "mediaRoutes"],
+    ["reviews", "reviewRoutes"], ["watchlist", "watchlistRoutes"], ["follow", "followRoutes"], ["top-five", "topFiveRoutes"],
+  ]) {
+    const { default: router } = await import(`../src/routes/${file}.js`);
+    for (const { route } of router.stack) {
+      if (!route) continue;
+      const routePath = `/api/${prefix}${route.path === "/" ? "" : route.path}`.replace(/:([A-Za-z][A-Za-z0-9]*)/g, "{$1}");
+      for (const method of Object.keys(route.methods)) actual.push(`${method} ${routePath}`);
+    }
+  }
+  const documented = Object.entries(document.paths).flatMap(([route, methods]) => Object.keys(methods).map((method) => `${method} ${route}`));
+  assert.deepEqual(documented.sort(), actual.sort());
+  function checkReferences(value) {
+    if (!value || typeof value !== "object") return;
+    if (value.$ref) {
+      assert.ok(value.$ref.startsWith("#/"));
+      assert.ok(value.$ref.slice(2).split("/").reduce((current, key) => current?.[key], document), `Unresolved ${value.$ref}`);
+    }
+    Object.values(value).forEach(checkReferences);
+  }
+  checkReferences(document);
+  const request = document.paths["/api/reviews"].post.requestBody.content["application/json"].schema;
+  assert.deepEqual(request.oneOf, [{ required: ["mediaId"] }, { required: ["episodeId"] }]);
+  assert.equal(document.components.schemas.MediaDetails.properties.communityScore.nullable, true);
 });

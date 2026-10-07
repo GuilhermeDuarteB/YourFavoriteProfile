@@ -160,3 +160,8 @@ export async function getSeriesDetails(id) {
 
   return {... detailsRes.data, cast: creditsRes.data.cast?.slice(0,8) || []};
 }
+
+export async function getSeasonDetails(seriesId, seasonNumber) {
+  const res = await tmdb.get(`/tv/${seriesId}/season/${seasonNumber}`);
+  return res.data;
+}

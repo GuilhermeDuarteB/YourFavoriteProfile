@@ -11,6 +11,7 @@ import Browse from "../views/BrowseView.vue";
 import MediaDetailsView from "../views/MediaDetailsView.vue";
 import SettingsView from "../views/SettingsView.vue";
 import WatchlistView from "../views/WatchlistView.vue";
+import UserReviewsView from "../views/UserReviewsView.vue";
 
 const routes = [
   { path: "/", name: "home", component: HomeView },
@@ -59,6 +60,7 @@ const routes = [
         : "/login";
     },
   },
+  { path: "/:username/reviews", name: "user-reviews", component: UserReviewsView },
   { path: "/:username", name: "profile", component: ProfileView },
   { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundView },
 ];

@@ -148,6 +148,121 @@ components:
           type: string
           nullable: true
 
+    RecentReview:
+      type: object
+      description: A direct movie/game review or an episode review with its parent series metadata.
+      properties:
+        id:
+          type: integer
+        score:
+          oneOf:
+            - type: number
+            - type: string
+          description: PostgreSQL numeric scores may be serialized as strings.
+        comment:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        title:
+          type: string
+          description: Media title, or parent series title for an episode review.
+        poster_url:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [movie, game, series]
+        episode_id:
+          type: integer
+          nullable: true
+        episode_title:
+          type: string
+          nullable: true
+        season_number:
+          type: integer
+          nullable: true
+        episode_number:
+          type: integer
+          nullable: true
+
+    UserReview:
+      type: object
+      properties:
+        id:
+          type: integer
+        score:
+          type: number
+          minimum: 0
+          maximum: 10
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        mediaId:
+          type: integer
+          description: Internal parent media ID, including the series for an episode review.
+        externalId:
+          type: string
+        mediaType:
+          type: string
+          enum: [movie, series, game]
+        mediaTitle:
+          type: string
+        posterUrl:
+          type: string
+          nullable: true
+        genres:
+          type: array
+          items:
+            type: string
+        episodeId:
+          type: integer
+          nullable: true
+        episodeTitle:
+          type: string
+          nullable: true
+        episodeNumber:
+          type: integer
+          nullable: true
+        seasonNumber:
+          type: integer
+          nullable: true
+
+    UserReviewsPage:
+      type: object
+      properties:
+        username:
+          type: string
+        reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserReview"
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          description: Review count after filters.
+        totalPages:
+          type: integer
+          description: Zero when no reviews match. An out-of-range page returns an empty reviews array.
+        totalUserReviews:
+          type: integer
+          description: Unfiltered count, used to distinguish an empty profile from empty filter results.
+        availableGenres:
+          type: array
+          description: Sorted unique parent-media genres across all this user's reviews, independent of filters.
+          items:
+            type: string
+
     CastMember:
       type: object
       properties:
@@ -221,10 +336,18 @@ components:
 
         score:
           type: number
+          description: External provider score from TMDB, or RAWG normalized to the 0–10 scale. Not the community score.
           format: float
           nullable: true
           minimum: 0
           maximum: 10
+
+        communityScore:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 10
+          description: Your Favorite Profile score. Movies/games average direct reviews; series average rated episode averages. Null when there are no ratings.
 
         genres:
           type: array
@@ -253,6 +376,39 @@ components:
           description: Present for games.
           items:
             type: string
+
+    Episode:
+      type: object
+      properties:
+        episodeId:
+          type: integer
+          description: Internal database episode ID used when submitting reviews.
+        episodeNumber:
+          type: integer
+        title:
+          type: string
+        overview:
+          type: string
+        airDate:
+          type: string
+          nullable: true
+          format: date
+        stillUrl:
+          type: string
+          nullable: true
+
+    SeasonEpisodes:
+      type: object
+      properties:
+        seasonNumber:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+        episodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Episode"
 
     Review:
       type: object
@@ -674,6 +830,69 @@ paths:
         "500":
           description: Error searching users
 
+  /api/users/{username}/reviews:
+    get:
+      tags: [Users]
+      summary: Get a user's public review history
+      description: Paginated movie/game reviews and episode reviews resolved through their parent series. Legacy direct series reviews remain readable. No authentication required.
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [movie, series, game]
+        - in: query
+          name: genre
+          description: Exact parent-media genre from availableGenres, with surrounding whitespace trimmed.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+        - in: query
+          name: minScore
+          description: Minimum 0–10 score. Star filters map 5 stars to 10, 4+ to 8, 3+ to 6, 2+ to 4, and 1+ to 2.
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [newest, oldest, highest, lowest]
+            default: newest
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Filtered reviews and pagination metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserReviewsPage"
+        "400":
+          description: Invalid filters, sort, or pagination
+        "404":
+          description: User not found
+        "500":
+          description: Error loading user reviews
+
   /api/users/{username}:
     get:
       tags:
@@ -728,8 +947,7 @@ paths:
                   recentReviews:
                     type: array
                     items:
-                      type: object
-                      additionalProperties: true
+                      $ref: "#/components/schemas/RecentReview"
 
                   genreBreakdown:
                     type: array
@@ -961,6 +1179,38 @@ paths:
         "500":
           description: Error loading discover results
 
+  /api/media/series/{id}/season/{seasonNumber}:
+    get:
+      tags:
+        - Media
+      summary: Load season episodes for a series
+      description: Fetches TMDB metadata and resolves local series, season, and episode identities. Use the returned internal episodeId for episode reviews. This endpoint is public.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: External TMDB series ID.
+          schema:
+            type: integer
+            minimum: 1
+        - in: path
+          name: seasonNumber
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Season episodes loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeasonEpisodes"
+        "400":
+          description: Series ID or season number is not a positive integer
+        "500":
+          description: Provider or database failure loading season episodes
+
   /api/media/{type}/{id}:
     get:
       tags:
@@ -1010,7 +1260,8 @@ paths:
         - Reviews
       summary: Create a review
       description: >
-        Creates a review for either a media item or an episode.
+        Creates a direct review for a movie/game or a review for an episode.
+        Series must be reviewed by episode; a series mediaId is rejected with 400.
         Exactly one of mediaId or episodeId must be provided.
         A user may only have one review for the same media or episode.
 
@@ -1025,15 +1276,20 @@ paths:
               type: object
               required:
                 - score
+              oneOf:
+                - required: [mediaId]
+                - required: [episodeId]
               properties:
                 mediaId:
                   type: integer
-                  nullable: true
+                  minimum: 1
+                  description: Internal movie/game ID. Series IDs are not accepted.
                   example: 42
 
                 episodeId:
                   type: integer
-                  nullable: true
+                  minimum: 1
+                  description: Internal episode ID returned by the season endpoint.
                   example: 120
 
                 score:
@@ -1057,13 +1313,16 @@ paths:
                 $ref: "#/components/schemas/Review"
 
         "400":
-          description: Invalid review data or invalid media/episode selection
+          description: Invalid review data, invalid target IDs, or a direct series review attempt
 
         "401":
           description: Authentication required or invalid token
 
         "409":
           description: User already reviewed this media or episode
+
+        "404":
+          description: Media or episode not found
 
         "500":
           description: Error creating review

@@ -2,7 +2,7 @@
 
 Your Favorite Profile is a full-stack media discovery and community application for movies, TV series, and games. Users can discover titles, write reviews, build a public profile, follow other users, manage a watchlist, and curate a personal Top 5.
 
-The product's differentiator is episode-by-episode TV reviewing with an automatically calculated series score. The browsing and media foundation is live; the complete episode review and aggregate scoring workflow is still in development.
+Movies and games use direct reviews. TV series are reviewed episode by episode through interactive season lists, and their community score is calculated from the averages of rated episodes. Provider scores from TMDB/RAWG remain separate from Your Favorite Profile community scores.
 
 ## Screenshots
 
@@ -25,14 +25,13 @@ The product's differentiator is episode-by-episode TV reviewing with an automati
 - Watchlist statuses (want to watch, watching, completed, and dropped), including watchlist-only Browse filtering
 - Media detail pages with provider metadata, cast, seasons, platforms, reviews, and watchlist actions
 - Review create, update, delete, and score validation
+- Lazy season loading with episode reviews, editing, deletion, and automatic series community scores
 - TMDB and RAWG integrations with normalized media cards and partial-provider failure handling
 - Interactive OpenAPI API documentation with JWT-authenticated endpoint testing through Swagger UI
 - Responsive public UI, API rate limiting, CORS configuration, and startup environment/database checks
 
 ## In development and roadmap
 
-- Complete episode-by-episode review flow and automatic series scoring
-- Persisting and displaying episode reviews in the series experience
 - Production deployment and operational monitoring
 - Database integrity improvements (constraints and indexes) planned separately
 - Avatar uploads and broader automated UI coverage
@@ -194,7 +193,8 @@ Passwords are hashed with bcrypt, protected routes use JWT middleware, PostgreSQ
 ## Known limitations
 
 - External provider search and the authenticated watchlist-only Browse view are bounded by provider pagination; Browse communicates when it has scanned a limited result window.
-- Episode-by-episode reviews and automatic series scoring remain in development.
+- Legacy direct series reviews are retained; new series reviews must target an episode. Season 0 specials are not included in the episode review flow.
+- The existing media key is `(external_id, source)`, so TMDB movie/series IDs can collide. Season loading rejects a conflicting local movie identity rather than attaching episodes to it; changing that key requires a separate database task.
 - The current frontend stores the JWT in browser local storage, so deployments should use an appropriate HTTPS origin and browser security policy.
 - No license is declared for this repository yet.
 

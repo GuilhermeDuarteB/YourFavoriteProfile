@@ -9,6 +9,7 @@ import {
   searchSeries,
   getMovieDetails,
   getSeriesDetails,
+  getSeasonDetails,
 } from "../services/tmbdService.js";
 
 import {
@@ -19,7 +20,8 @@ import {
   getGameDetails,
 } from "../services/rawgService.js";
 
-import { findOrCreateMedia } from "../models/mediaModel.js";
+import { findOrCreateMedia, findOrCreateSeason, findOrCreateEpisode } from "../models/mediaModel.js";
+import { getMediaRating, getSeriesMedia } from "../models/reviewModel.js";
 
 function formatMovie(item) {
   return {
@@ -336,9 +338,45 @@ export async function getMediaDetails(req, res) {
       genres: detail.genres,
     });
 
-    res.json({ ...detail, mediaId: media.id });
+    const communityScore = type === "series"
+      ? await getSeriesMedia(media.id)
+      : await getMediaRating(media.id);
+    res.json({ ...detail, mediaId: media.id, communityScore });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error loading media details" });
+  }
+}
+
+export async function getSeasonEpisodes(req, res) {
+  const { id, seasonNumber } = req.params;
+  if (!id || !/^\d+$/.test(String(id)) || !Number.isSafeInteger(Number(id)) || Number(id) <= 0 ||
+      !/^\d+$/.test(String(seasonNumber)) || !Number.isSafeInteger(Number(seasonNumber)) || Number(seasonNumber) <= 0) {
+    return res.status(400).json({ error: "Series ID and season number must be positive integers" });
+  }
+  try {
+    const [series, seasonData] = await Promise.all([
+      getSeriesDetails(id), getSeasonDetails(id, Number(seasonNumber)),
+    ]);
+    const media = await findOrCreateMedia({
+      externalId: String(series.id), source: "tmdb", type: "series", title: series.name,
+      posterUrl: series.poster_path ? `https://image.tmdb.org/t/p/w500${series.poster_path}` : null,
+      releaseDate: series.first_air_date || null, genres: series.genres?.map((genre) => genre.name) || [],
+    });
+    if (media.type !== "series") throw new Error("Local media identity is not a series");
+    const season = await findOrCreateSeason(media.id, Number(seasonNumber), seasonData.name);
+    const episodes = [];
+    for (const raw of seasonData.episodes || []) {
+      const episode = await findOrCreateEpisode(season.id, raw.episode_number, raw.name, raw.air_date);
+      episodes.push({
+        episodeId: episode.id, episodeNumber: raw.episode_number, title: raw.name,
+        overview: raw.overview || "", airDate: raw.air_date || null,
+        stillUrl: raw.still_path ? `https://image.tmdb.org/t/p/w300${raw.still_path}` : null,
+      });
+    }
+    res.json({ seasonNumber: Number(seasonNumber), name: seasonData.name, episodes });
+  } catch (err) {
+    console.error("Season episodes failed:", err.message);
+    res.status(500).json({ error: "Error loading season episodes" });
   }
 }

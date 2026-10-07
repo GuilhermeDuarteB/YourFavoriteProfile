@@ -48,7 +48,7 @@ const heroPosters = computed(() =>
     <NavBar />
     <div class="hero">
       <div>
-        <div class="eyebrow">Episode-by-episode ratings · In development</div>
+        <div class="eyebrow">Episode-by-episode ratings</div>
         <h1>
           Rate every episode.<br />Build your <span>series score</span>.
         </h1>
