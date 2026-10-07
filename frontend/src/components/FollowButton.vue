@@ -1,17 +1,20 @@
 <script setup>
-import { ref, watch } from 'vue';
-import api from '../api/axios.js';
+import { ref, watch } from "vue";
+import api from "../api/axios.js";
 
 const props = defineProps({
   username: String,
   initialFollowing: Boolean,
 });
-const emit = defineEmits(['changed']);
+const emit = defineEmits(["changed"]);
 
 const following = ref(props.initialFollowing);
 const loading = ref(false);
 
-watch(() => props.initialFollowing, (v) => (following.value = v));
+watch(
+  () => props.initialFollowing,
+  (v) => (following.value = v),
+);
 
 async function toggle() {
   if (loading.value) return;
@@ -24,7 +27,7 @@ async function toggle() {
       await api.post(`/follow/${props.username}`);
       following.value = true;
     }
-    emit('changed', following.value);
+    emit("changed", following.value);
   } catch (err) {
     console.error(err);
   } finally {
@@ -34,7 +37,12 @@ async function toggle() {
 </script>
 
 <template>
-  <button class="btn" :class="{ 'btn-primary': !following }" :disabled="loading" @click="toggle">
-    {{ following ? 'Following' : 'Follow' }}
+  <button
+    class="btn"
+    :class="{ 'btn-primary': !following }"
+    :disabled="loading"
+    @click="toggle"
+  >
+    {{ following ? "Following" : "Follow" }}
   </button>
 </template>
