@@ -8,7 +8,7 @@ test("migration files have ordered distinct versions and SHA-256 checksums", asy
   const migrations = await readMigrations();
   assert.deepEqual(
     migrations.map(({ version }) => version),
-    [1, 2, 3, 4, 5, 6],
+    [1, 2, 3, 4, 5, 6, 7],
   );
   assert.ok(
     migrations.every(({ checksum }) => /^[a-f0-9]{64}$/.test(checksum)),

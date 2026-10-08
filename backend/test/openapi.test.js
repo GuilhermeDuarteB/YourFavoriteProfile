@@ -151,6 +151,25 @@ test("documented methods match Express routes and all schema references resolve"
   );
 });
 
+test("username identity and public profile ID are documented", () => {
+  const document = YAML.parse(fs.readFileSync(openApiPath, "utf8"));
+  const profile = document.paths["/api/users/{username}"].get;
+  assert.equal(
+    profile.responses["200"].content["application/json"].schema.properties.id
+      .type,
+    "integer",
+  );
+  assert.match(profile.description, /case-insensitive/);
+  assert.match(
+    document.paths["/api/auth/register"].post.description,
+    /case-insensitively/,
+  );
+  assert.match(
+    document.paths["/api/auth/me/username"].put.description,
+    /Case-only changes/,
+  );
+});
+
 test("review scores use OpenAPI 3.0 exclusive minimum and allow positive fractions", () => {
   const document = YAML.parse(fs.readFileSync(openApiPath, "utf8"));
   const schemas = [

@@ -11,7 +11,7 @@ export const TABLES = [
 ];
 export const VIEWS = ["vw_media_rating", "vw_series_rating"];
 
-export async function schemaSignature(client) {
+export async function schemaSignature(client, tables = TABLES) {
   const columns = await client.query(
     `
     SELECT c.relname AS table_name, a.attname AS name,
@@ -23,7 +23,7 @@ export async function schemaSignature(client) {
     LEFT JOIN pg_attrdef d ON d.adrelid=c.oid AND d.adnum=a.attnum
     WHERE n.nspname='public' AND c.relname=ANY($1)
     ORDER BY c.relname, a.attnum`,
-    [TABLES],
+    [tables],
   );
   const constraints = await client.query(
     `
@@ -33,7 +33,7 @@ export async function schemaSignature(client) {
     JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relname=ANY($1) AND con.contype <> 'n'
     ORDER BY c.relname, con.conname`,
-    [TABLES],
+    [tables],
   );
   const indexes = await client.query(
     `
@@ -42,7 +42,7 @@ export async function schemaSignature(client) {
     FROM pg_index x JOIN pg_class c ON c.oid=x.indrelid
     JOIN pg_class i ON i.oid=x.indexrelid JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relname=ANY($1) ORDER BY c.relname,i.relname`,
-    [TABLES],
+    [tables],
   );
   const views = await client.query(
     `

@@ -18,6 +18,8 @@ export const CHECKS = {
     "SELECT id FROM public.watchlist WHERE status NOT IN ('want_to_watch','watching','completed','dropped')",
   normalized_email_collisions:
     "SELECT LOWER(TRIM(email)) FROM public.users GROUP BY LOWER(TRIM(email)) HAVING COUNT(*)>1",
+  case_insensitive_username_collisions:
+    "SELECT LOWER(username) FROM public.users GROUP BY LOWER(username) HAVING COUNT(*)>1",
   nonpositive_scores: "SELECT id FROM public.reviews WHERE score<=0",
   excessive_scores: "SELECT id FROM public.reviews WHERE score>10",
 };

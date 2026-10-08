@@ -1,13 +1,12 @@
 import "dotenv/config";
 import pg from "pg";
-import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createHash, randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { createTestDatabase } from "../db/testDatabase.js";
-import { databaseSnapshot } from "../db/snapshot.js";
+import { backupSnapshot, verifyBackup } from "../db/backupVerification.js";
 import { preflight } from "../db/preflight.js";
 
 // pg_dump/pg_restore must be on PATH (or set PG_BIN to their directory).
@@ -56,8 +55,9 @@ try {
   run("pg_restore", ["--version"]);
   await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
   await client.query("SET LOCAL TIME ZONE 'UTC'");
+  await client.query("SET LOCAL search_path TO public, pg_catalog");
   await preflight(client);
-  const snapshot = await databaseSnapshot(client);
+  const snapshot = await backupSnapshot(client);
   const exported = (await client.query("SELECT pg_export_snapshot() AS id"))
     .rows[0].id;
   const directory = fileURLToPath(new URL("../../.backups/", import.meta.url));
@@ -80,45 +80,12 @@ try {
   restored = await createTestDatabase(process.env.DATABASE_URL);
   run(
     "pg_restore",
-    [
-      "--no-password",
-      "--exit-on-error",
-      "--no-owner",
-      "--no-privileges",
-      "--dbname=" + restored.name,
-      path,
-    ],
+    ["--no-password", "--exit-on-error", "--dbname=" + restored.name, path],
     restored.name,
   );
   const verification = await restored.pool.connect();
   try {
-    // pg_dump reparses view SQL on restore (e.g. array casts can move to
-    // individual elements). Reparse the original definitions in this disposable
-    // database too, rather than weakening the comparison or touching live views.
-    const expected = structuredClone(snapshot);
-    for (const view of expected.schema.views) {
-      await verification.query(
-        "CREATE OR REPLACE TEMP VIEW backup_view_verification AS " +
-          view.definition,
-      );
-      view.definition = (
-        await verification.query(
-          "SELECT pg_get_viewdef('pg_temp.backup_view_verification'::regclass, true) AS definition",
-        )
-      ).rows[0].definition;
-      await verification.query("DROP VIEW pg_temp.backup_view_verification");
-    }
-    await verification.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
-    await verification.query("SET LOCAL TIME ZONE 'UTC'");
-    const recovered = await databaseSnapshot(verification);
-    for (const section of Object.keys(expected)) {
-      assert.deepEqual(
-        recovered[section],
-        expected[section],
-        "Restored " + section + " differs from backup snapshot",
-      );
-    }
-    await verification.query("COMMIT");
+    await verifyBackup(verification, snapshot);
   } finally {
     verification.release();
   }

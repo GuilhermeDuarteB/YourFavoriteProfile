@@ -576,7 +576,7 @@ paths:
       tags:
         - Auth
       summary: Register a new user
-      description: Creates a new account and returns the authenticated user/session data.
+      description: Creates a new account and returns the authenticated user/session data. Usernames are unique case-insensitively and retain their submitted display casing.
 
       requestBody:
         required: true
@@ -593,6 +593,7 @@ paths:
                   type: string
                   minLength: 3
                   maxLength: 50
+                  pattern: '^[a-zA-Z0-9_.]+$'
                   example: guilherme
 
                 email:
@@ -618,7 +619,7 @@ paths:
           description: Invalid registration data
 
         "409":
-          description: Username or email already exists
+          description: Username (ignoring case) or email already exists, including concurrent registration conflicts
 
         "500":
           description: Internal server error
@@ -722,7 +723,7 @@ paths:
       tags:
         - Auth
       summary: Update account username
-      description: Updates the authenticated user's username after password confirmation.
+      description: Updates the authenticated user's username after password confirmation. Case-only changes by the same user are allowed; names owned by another user are rejected ignoring case. Display casing is preserved and ID-based relationships remain unchanged. Old names do not become aliases.
 
       security:
         - bearerAuth: []
@@ -741,6 +742,7 @@ paths:
                   type: string
                   minLength: 3
                   maxLength: 50
+                  pattern: '^[a-zA-Z0-9_.]+$'
                   example: new_username
 
                 password:
@@ -763,7 +765,7 @@ paths:
           description: Authentication required or incorrect password
 
         "409":
-          description: Username already in use
+          description: Username already in use by another account, ignoring case (including concurrent conflicts)
 
         "500":
           description: Internal server error
@@ -810,7 +812,7 @@ paths:
       tags:
         - Users
       summary: Search users
-      description: Searches users by username.
+      description: Searches users by username case-insensitively and returns stored display casing.
 
       parameters:
         - in: query
@@ -839,7 +841,7 @@ paths:
     get:
       tags: [Users]
       summary: Get a user's public review history
-      description: Paginated movie/game reviews and episode reviews resolved through their parent series. Legacy direct series reviews remain readable. No authentication required.
+      description: Paginated movie/game reviews and episode reviews resolved through their parent series. Username lookup is case-insensitive and the response returns stored display casing. Legacy direct series reviews remain readable. No authentication required.
       parameters:
         - in: path
           name: username
@@ -908,6 +910,8 @@ paths:
         genre breakdown, follow information and Top 5 media.
         Authentication is optional and is used to determine whether
         the current viewer follows the profile.
+        Username lookup is case-insensitive. The response includes the stable
+        user ID and stored display casing; URL casing does not change ownership.
 
       security:
         - {}
@@ -929,6 +933,9 @@ paths:
               schema:
                 type: object
                 properties:
+                  id:
+                    type: integer
+                    description: Stable user ID for ownership comparisons.
                   username:
                     type: string
                     example: guilherme
@@ -1674,7 +1681,7 @@ paths:
         - in: path
           name: username
           required: true
-          description: Username of the user to follow.
+          description: Case-insensitive username of the user to follow. Self-follow checks use user IDs.
           schema:
             type: string
           example: johndoe
@@ -1716,7 +1723,7 @@ paths:
         - in: path
           name: username
           required: true
-          description: Username of the user to unfollow.
+          description: Case-insensitive username of the user to unfollow.
           schema:
             type: string
           example: johndoe
@@ -1806,7 +1813,7 @@ paths:
       tags:
         - Top Five
       summary: Get a user's Top 5
-      description: Returns the public Top 5 media list for the specified username.
+      description: Returns the public Top 5 media list for the specified username using case-insensitive lookup.
 
       parameters:
         - in: path

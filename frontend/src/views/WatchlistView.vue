@@ -14,6 +14,8 @@ const items = ref([]);
 const loading = ref(true);
 const error = ref("");
 const activeStatus = ref("all");
+const owner = ref(null);
+let requestVersion = 0;
 
 const statuses = [
   { id: "all", label: "All" },
@@ -24,25 +26,40 @@ const statuses = [
 ];
 
 const isOwnWatchlist = computed(
-  () => authStore.user?.username === route.params.username,
+  () => !!authStore.user && owner.value?.id === authStore.user.id,
 );
 
 async function loadWatchlist() {
-  if (!isOwnWatchlist.value) {
-    loading.value = false;
-    return;
-  }
+  const version = ++requestVersion;
   loading.value = true;
   error.value = "";
+  items.value = [];
   try {
+    if (!authStore.user) {
+      owner.value = null;
+      return;
+    }
+    const username = route.params.username;
+    if (owner.value?.username.toLowerCase() !== username.toLowerCase()) {
+      owner.value = null;
+      const res = await api.get(`/users/${encodeURIComponent(username)}`);
+      if (version !== requestVersion) return;
+      owner.value = res.data;
+    }
+    if (!isOwnWatchlist.value) return;
     const params =
       activeStatus.value !== "all" ? { status: activeStatus.value } : {};
     const res = await api.get("/watchlist/me", { params });
-    items.value = res.data;
+    if (version === requestVersion) items.value = res.data;
   } catch (err) {
-    error.value = "Error loading watchlist";
+    if (version === requestVersion) {
+      error.value =
+        err.response?.status === 404
+          ? "User not found"
+          : "Error loading watchlist";
+    }
   } finally {
-    loading.value = false;
+    if (version === requestVersion) loading.value = false;
   }
 }
 
@@ -66,8 +83,11 @@ async function updateStatus(mediaId, status) {
   }
 }
 
-watch(() => route.params.username, loadWatchlist, { immediate: true });
-watch(activeStatus, loadWatchlist);
+watch(
+  [() => route.params.username, () => authStore.user?.id, activeStatus],
+  loadWatchlist,
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -75,9 +95,11 @@ watch(activeStatus, loadWatchlist);
     <NavBar />
 
     <div class="watchlist-page">
-      <h1>{{ route.params.username }}'s Watchlist</h1>
+      <h1>{{ owner?.username || route.params.username }}'s Watchlist</h1>
 
-      <div v-if="!isOwnWatchlist" class="state-message">
+      <div v-if="loading" class="state-message">Loading...</div>
+      <div v-else-if="error" class="state-message">{{ error }}</div>
+      <div v-else-if="!isOwnWatchlist" class="state-message">
         Watchlists are private — you can only view your own.
       </div>
 
@@ -93,9 +115,7 @@ watch(activeStatus, loadWatchlist);
           </button>
         </div>
 
-        <div v-if="loading" class="state-message">Loading...</div>
-        <div v-else-if="error" class="state-message">{{ error }}</div>
-        <div v-else-if="items.length === 0" class="state-message">
+        <div v-if="items.length === 0" class="state-message">
           Nothing here yet.
         </div>
         <div v-else class="grid">

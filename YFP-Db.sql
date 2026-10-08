@@ -145,3 +145,4 @@ CREATE INDEX idx_follows_following ON follows(following_id);
 CREATE UNIQUE INDEX reviews_user_media_unique ON reviews(user_id, media_id) WHERE media_id IS NOT NULL;
 CREATE UNIQUE INDEX reviews_user_episode_unique ON reviews(user_id, episode_id) WHERE episode_id IS NOT NULL;
 CREATE UNIQUE INDEX users_email_normalized_unique ON users(LOWER(TRIM(email)));
+CREATE UNIQUE INDEX users_username_lower_unique ON users(LOWER(username));

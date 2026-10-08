@@ -1,6 +1,11 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { normalizeEmail, validateUsername, validateEmail, validatePassword } from "../utils/validation.js";
+import {
+  normalizeEmail,
+  validateUsername,
+  validateEmail,
+  validatePassword,
+} from "../utils/validation.js";
 import {
   findUserById,
   updateUserEmail,
@@ -12,15 +17,25 @@ import {
 } from "../models/userModel.js";
 
 const SALT_ROUNDS = 10;
-const isEmailConflict = (err) => err.code === "23505" &&
+const isEmailConflict = (err) =>
+  err.code === "23505" &&
   ["users_email_normalized_unique", "users_email_key"].includes(err.constraint);
+const isUsernameConflict = (err) =>
+  err.code === "23505" &&
+  ["users_username_lower_unique", "users_username_key"].includes(
+    err.constraint,
+  );
 
 export async function register(req, res) {
   try {
     const { username, password } = req.body || {};
     const email = normalizeEmail(req.body?.email);
-    const validationError = validateUsername(username) || validateEmail(email) || validatePassword(password);
-    if (validationError) return res.status(400).json({ error: validationError });
+    const validationError =
+      validateUsername(username) ||
+      validateEmail(email) ||
+      validatePassword(password);
+    if (validationError)
+      return res.status(400).json({ error: validationError });
 
     const existingUser = await findUserByEmail(email);
     if (existingUser) {
@@ -40,7 +55,10 @@ export async function register(req, res) {
     });
     res.status(201).json({ user, token });
   } catch (err) {
-    if (isEmailConflict(err)) return res.status(409).json({ error: "Email already in use" });
+    if (isEmailConflict(err))
+      return res.status(409).json({ error: "Email already in use" });
+    if (isUsernameConflict(err))
+      return res.status(409).json({ error: "Username already in use" });
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
@@ -94,7 +112,10 @@ export async function updateEmail(req, res) {
     const emailError = validateEmail(newEmail);
     if (emailError) return res.status(400).json({ error: emailError });
     const user = await findUserById(req.userId, true);
-    if (!user) return res.status(401).json({ code: "INVALID_TOKEN", message: "Account no longer exists" });
+    if (!user)
+      return res
+        .status(401)
+        .json({ code: "INVALID_TOKEN", message: "Account no longer exists" });
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(401).json({ error: "Incorrect password" });
 
@@ -106,7 +127,8 @@ export async function updateEmail(req, res) {
     const updated = await updateUserEmail(req.userId, newEmail);
     res.json(updated);
   } catch (err) {
-    if (isEmailConflict(err)) return res.status(409).json({ error: "Email already in use" });
+    if (isEmailConflict(err))
+      return res.status(409).json({ error: "Email already in use" });
     console.error(err);
     res.status(500).json({ error: "Error updating email" });
   }
@@ -124,7 +146,10 @@ export async function updateUsernameHandler(req, res) {
     if (usernameError) return res.status(400).json({ error: usernameError });
 
     const user = await findUserById(req.userId, true);
-    if (!user) return res.status(401).json({ code: "INVALID_TOKEN", message: "Account no longer exists" });
+    if (!user)
+      return res
+        .status(401)
+        .json({ code: "INVALID_TOKEN", message: "Account no longer exists" });
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(401).json({ error: "Incorrect password" });
 
@@ -136,6 +161,8 @@ export async function updateUsernameHandler(req, res) {
     const updated = await updateUsername(req.userId, newUsername);
     res.json(updated);
   } catch (err) {
+    if (isUsernameConflict(err))
+      return res.status(409).json({ error: "Username already in use" });
     console.error(err);
     res.status(500).json({ error: "Error updating username" });
   }
@@ -149,7 +176,10 @@ export async function deleteAccount(req, res) {
     }
 
     const user = await findUserById(req.userId, true);
-    if (!user) return res.status(401).json({ code: "INVALID_TOKEN", message: "Account no longer exists" });
+    if (!user)
+      return res
+        .status(401)
+        .json({ code: "INVALID_TOKEN", message: "Account no longer exists" });
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(401).json({ error: "Incorrect password" });
 

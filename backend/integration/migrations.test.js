@@ -67,7 +67,7 @@ test("empty database migrates, records checksums, reruns safely, and matches can
     ).rows;
     assert.deepEqual(
       history.map((row) => row.version),
-      [1, 2, 3, 4, 5, 6],
+      [1, 2, 3, 4, 5, 6, 7],
     );
     assert.ok(
       history.every(
@@ -160,7 +160,7 @@ test("checksum changes, duplicate versions, failed SQL and concurrent runners ar
   try {
     await cp(migrationDirectory, temp, { recursive: true });
     await writeFile(
-      join(temp, "007_failure.sql"),
+      join(temp, "008_failure.sql"),
       "CREATE TABLE rollback_probe(id integer); SELECT missing_column FROM users;",
     );
     await assert.rejects(migrate(db.pool, { ...quiet, directory }));
@@ -173,7 +173,7 @@ test("checksum changes, duplicate versions, failed SQL and concurrent runners ar
         .rows[0].name,
       null,
     );
-    await rm(join(temp, "007_failure.sql"));
+    await rm(join(temp, "008_failure.sql"));
     await migrate(db.pool, { ...quiet, directory });
     await writeFile(
       join(temp, "002_value_domains.sql"),

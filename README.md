@@ -17,6 +17,7 @@ Movies and games use direct reviews. TV series are reviewed episode by episode t
 ## Current features
 
 - Registration and login with JWT authentication and bcrypt password hashing
+- Case-insensitive username identity with preserved display casing and ID-based ownership
 - Public profiles with reviews, a publicly displayed Top 5, genre radar, follower counts, and follow/unfollow
 - Top 5 management in Settings with ranked movie, series, and game selections
 - User search and global navbar search across users and media
@@ -33,7 +34,6 @@ Movies and games use direct reviews. TV series are reviewed episode by episode t
 ## In development and roadmap
 
 - Production deployment and operational monitoring
-- Case-insensitive username identity, including public URL compatibility, planned separately
 - Avatar uploads and broader automated UI coverage
 
 ## Tech stack
@@ -127,13 +127,17 @@ yarn db:migrate
 yarn db:status
 ```
 
-`db:backup` requires `pg_dump` and `pg_restore` on PATH (or `PG_BIN` pointing to their directory), and a database role with `CREATEDB`. It supports plain local connections and writes a custom-format dump into the ignored `.backups/` directory. It restores into a newly created disposable database and compares rows, IDs, sequences, constraints, indexes, and views before writing a `.verified.json` report. It never restores over the source database. Keep backups private and retain a copy outside this checkout; deployment-specific TLS/backup tooling should be used for remote databases.
+`db:backup` requires `pg_dump` and `pg_restore` on PATH (or `PG_BIN` pointing to their directory), and a database role with `CREATEDB` and permission to restore the original owners and privileges. It supports plain local connections and writes a custom-format dump into the ignored `.backups/` directory. It restores into a newly created disposable database and compares row fingerprints, IDs, sequences and their ownership, columns, constraints, indexes, working rating views, migration history, schemas, extensions, owners, and privileges before writing a `.verified.json` report. PostgreSQL reparses CHECK/view definitions in temporary objects in the disposable database, so equivalent dump/restore cast representations compare correctly while changed expressions still fail. The dump and expected rows use the same exported database snapshot. It never restores over the source database. Keep backups private and retain a copy outside this checkout; deployment-specific TLS/backup tooling should be used for remote databases.
 
 Existing databases are adopted only if all eight application tables, both rating views, columns/types/defaults, constraints, and indexes match `backend/db/baseline-signature.json`. This PostgreSQL 18 catalog signature represents `001_baseline.sql`; the equivalent media-view array-cast rendering produced by `pg_dump`/restore is also accepted. The runner records that baseline without replaying table creation. Unexpected or altered schemas stop with an error; they are never silently stamped. Final-schema SQL imports without migration history are deliberately not adopted as historical baselines.
 
 The runner checks all pending integrity rules before changing an existing database, locks application tables during migration, and uses a transaction-scoped advisory lock to exclude another runner. All pending SQL and `schema_migrations` history entries commit together or roll back together. Applied files are immutable: SHA-256 checksums (with CRLF/LF normalized), filenames, and ordering are checked on every run. Add a new numbered migration for future changes; do not edit or delete applied files. There is no automatic down/reset command.
 
-Core protection includes typed media identity, valid media/watchlist domains, one review per user/target, normalized email uniqueness, and positive review scores. Existing raw email uniqueness, foreign keys, review target XOR, lookup indexes, IDs, and data are retained. Username identity remains case-sensitive.
+Core protection includes typed media identity, valid media/watchlist domains, one review per user/target, normalized email uniqueness, case-insensitive username uniqueness, and positive review scores. Existing raw email/username uniqueness, foreign keys, review target XOR, lookup indexes, IDs, and data are retained.
+
+Migration `007_case_insensitive_usernames.sql` adds `users_username_lower_unique` on `LOWER(username)` without rewriting stored names. Preflight stops on case-insensitive collisions; it never renames or merges accounts. Resolve any collisions through an explicit account-ownership decision, then take a new verified backup and run migrations before starting this application version. Until the migration succeeds, ambiguous username lookups fail instead of selecting an arbitrary account.
+
+For example, `/Guilherme`, `/guilherme`, and `/GUILHERME` resolve to the same user, while the UI displays the stored `Guilherme`. Registration and username changes return 409 when another account owns that name ignoring case; changing only your own casing is allowed. Profiles, follow targets, Top Five, and review history share the same lookup. Profile/watchlist ownership and protected writes use user IDs. New links use canonical names from API/session data, without case-only redirects. A full rename preserves relationships but does not create aliases for the old name.
 
 ### Backend
 
@@ -143,7 +147,7 @@ After migrations, configure the remaining application environment variables and 
 yarn dev
 ```
 
-Run migrations before starting this version of the application: its media UPSERT requires the new three-column unique constraint.
+Run migrations before starting this version of the application: its media UPSERT requires the three-column unique constraint, and username identity requires migration 007.
 
 The API listens on `http://localhost:3000` by default. `yarn start` runs the production server entry point.
 

@@ -36,9 +36,13 @@ export async function findUserById(id, withPassword = false) {
 export async function findUserByUsername(username) {
   const result = await pools.query(
     `SELECT id, username, email, bio, avatar_url, created_at
-     FROM users WHERE username = $1`,
+     FROM users WHERE LOWER(username) = LOWER($1) LIMIT 2`,
     [username],
   );
+  // Fail closed if this code is started before a colliding legacy DB is migrated.
+  if (result.rows.length > 1) {
+    throw new Error("Ambiguous username identity; migration 007 is required");
+  }
   return result.rows[0];
 }
 

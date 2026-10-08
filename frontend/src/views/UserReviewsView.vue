@@ -74,14 +74,14 @@ function updateFilter(key, value) {
   delete query.page;
   router.push({
     name: "user-reviews",
-    params: { username: route.params.username },
+    params: { username: result.value?.username || route.params.username },
     query,
   });
 }
 function changePage(page) {
   router.push({
     name: "user-reviews",
-    params: { username: route.params.username },
+    params: { username: result.value?.username || route.params.username },
     query: { ...route.query, page: String(page) },
   });
 }

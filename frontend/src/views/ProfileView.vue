@@ -16,20 +16,27 @@ const loading = ref(true);
 const error = ref("");
 
 const isOwnProfile = computed(
-  () => authStore.user?.username === route.params.username,
+  () => !!authStore.user && profile.value?.id === authStore.user.id,
 );
+let requestVersion = 0;
 
 async function loadProfile() {
+  const version = ++requestVersion;
   loading.value = true;
   error.value = "";
+  profile.value = null;
   try {
-    const res = await api.get(`/users/${route.params.username}`);
+    const res = await api.get(
+      `/users/${encodeURIComponent(route.params.username)}`,
+    );
+    if (version !== requestVersion) return;
     profile.value = res.data;
   } catch (err) {
+    if (version !== requestVersion) return;
     error.value =
       err.response?.status === 404 ? "User not found" : "Error loading profile";
   } finally {
-    loading.value = false;
+    if (version === requestVersion) loading.value = false;
   }
 }
 

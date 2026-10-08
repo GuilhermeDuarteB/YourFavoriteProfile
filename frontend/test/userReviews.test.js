@@ -136,6 +136,23 @@ function pageHarness(api, query = {}) {
   };
 }
 
+test("review navigation uses the canonical username returned by the API", async () => {
+  const page = pageHarness({
+    get: async () => ({ data: { ...fixture, username: "Alice" } }),
+  });
+  try {
+    page.route.params.username = "ALICE";
+    await settle();
+    page.state.changePage(2);
+    assert.equal(page.pushes.at(-1).params.username, "Alice");
+    await settle();
+    page.state.updateFilter("type", "movie");
+    assert.equal(page.pushes.at(-1).params.username, "Alice");
+  } finally {
+    page.stop();
+  }
+});
+
 test("the public user reviews route resolves before the generic profile route without requiring auth", () => {
   const source = read("router/index.js");
   const components = Object.fromEntries(
