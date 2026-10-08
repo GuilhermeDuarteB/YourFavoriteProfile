@@ -268,12 +268,39 @@ yarn test:db --local
 The REST API is grouped under `/api`:
 
 - `/api/auth` — registration, login, and account changes
-- `/api/users` — public profiles and user search
+- `/api/users` — public profiles, user search, and paginated public followers/following lists
 - `/api/media` — trending, latest episodes, discover/search, and details
 - `/api/reviews` — media and episode review operations
 - `/api/follow` — follow and unfollow
 - `/api/watchlist` — authenticated watchlist operations
 - `/api/top-five` — personal Top 5 operations
+
+## Moderation and legacy content
+
+Usernames, bios, and review comments are checked on the server against a deliberately narrow list of explicit slurs and common obfuscations. External TMDB/RAWG titles are filtered at API boundaries, while matching legacy media, reviews, watchlist entries, and Top 5 rows remain stored and are never deleted automatically. A legacy bio that matches the policy is returned as unavailable on public profiles; the owner can still retrieve it through the authenticated account endpoint to decide how to edit it.
+
+Complete concatenated chains of known blocked terms are also detected, while outer word boundaries remain required for prose and media titles. Usernames additionally recognize numeric/`x` decorations; registration, username changes and the manual cleanup planner share that rule. Portuguese coverage includes two derogatory collective terms documented by [Priberam](https://dicionario.priberam.org/pretalhada) and [Priberam's related entry](https://dicionario.priberam.org/negralhada), not ordinary ethnicity names or identity terms. Context-dependent animal words, reclaimed terms, arbitrary affixes and unrecognized obfuscations still require manual administrative review; the policy does not infer hateful intent from an ambiguous username.
+
+Legacy usernames can be reviewed with the maintenance command below. It is read-only by default and prints only account IDs and deterministic replacement names:
+
+```bash
+cd backend
+yarn users:moderate
+```
+
+After taking and verifying a current backup and obtaining explicit approval, an administrator may apply the planned username changes with `--apply` from a trusted environment. This command is never part of server startup, deployment, or tests:
+
+```bash
+yarn users:moderate --apply
+```
+
+The maintenance transaction updates usernames by user ID, preserves account relationships and credentials, respects case-insensitive username uniqueness, and is idempotent. Do not run the apply mode against production without a reviewed dry-run and recoverable backup.
+
+Before a production run, verify the target database in your trusted administration environment, take a fresh backup and verify restoration into a disposable database, review the dry-run account IDs and proposed names, and obtain approval. Use a maintenance window for the apply command: it takes a short-lived users-table write lock and recalculates the plan to avoid collisions. Re-run the dry-run afterwards; it should propose no further changes. No migration is needed for moderation.
+
+Renamed accounts keep their email/password login and ID-based relationships. The frontend refreshes the current username from `GET /api/auth/me` on startup; reload an already-open tab after maintenance. Old profile URLs are not aliases. Existing offensive usernames remain visible until the administrator runs this explicit cleanup. Legacy blocked bios stay hidden publicly without a database rewrite; their owners can replace or clear them in Settings.
+
+If a Top 5 contains hidden media, saving a replacement returns 409 and leaves **all** its entries intact. An explicit support/owner decision is needed before any manual cleanup. Moderation is intentionally conservative: it avoids innocent substrings and ethnicity names, but cannot detect every evasion or distinguish a quoted slur in a historical work from abuse. Filtered provider pages and profile previews may contain fewer items; database review-history pagination excludes blocked titles before calculating totals.
 
 ## Reliability and security
 

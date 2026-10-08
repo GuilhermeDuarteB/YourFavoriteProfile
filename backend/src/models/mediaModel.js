@@ -1,17 +1,24 @@
 import { pools } from "../config/db.js";
+import { isBlockedMedia } from "../utils/moderation.js";
 
 export async function findMediaById(mediaId) {
   const result = await pools.query("SELECT * FROM media WHERE id = $1", [
     mediaId,
   ]);
-  return result.rows[0];
+  const media = result.rows[0];
+  return isBlockedMedia(media) ? undefined : media;
 }
 
 export async function findEpisodeById(episodeId) {
-  const result = await pools.query("SELECT id FROM episodes WHERE id = $1", [
-    episodeId,
-  ]);
-  return result.rows[0];
+  const result = await pools.query(
+    `SELECT ep.id, ep.title, m.title AS media_title, se.title AS season_title
+     FROM episodes ep JOIN seasons se ON se.id = ep.season_id
+     JOIN media m ON m.id = se.media_id WHERE ep.id = $1`,
+    [episodeId],
+  );
+  const episode = result.rows[0];
+  return isBlockedMedia(episode) || isBlockedMedia({ title: episode?.media_title }) ||
+    isBlockedMedia({ title: episode?.season_title }) ? undefined : episode;
 }
 
 export async function findOrCreateSeason(mediaId, seasonNumber, title) {

@@ -11,6 +11,8 @@ import {
 } from "../models/reviewModel.js";
 import { getFollowCounts, isFollowing } from "../models/followModel.js";
 import { getTopFiveByUser } from "../models/topFiveModel.js";
+import { validateBio } from "../utils/validation.js";
+import { publicBio } from "../utils/moderation.js";
 
 export async function getPublicProfile(req, res) {
   try {
@@ -32,7 +34,7 @@ export async function getPublicProfile(req, res) {
     res.json({
       id: user.id,
       username: user.username,
-      bio: user.bio,
+      bio: publicBio(user.bio),
       avatarUrl: user.avatar_url,
       createdAt: user.created_at,
       stats,
@@ -50,11 +52,19 @@ export async function getPublicProfile(req, res) {
 
 export async function updateMyProfile(req, res) {
   try {
+    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body))
+      return res.status(400).json({ error: "Profile must be an object" });
     const { bio, avatarUrl } = req.body;
+    const bioError = validateBio(bio);
+    if (bioError) return res.status(400).json({ error: bioError });
+    if (avatarUrl != null && typeof avatarUrl !== "string")
+      return res.status(400).json({ error: "Avatar URL must be text or null" });
     const updated = await updateUserProfile(req.userId, { bio, avatarUrl });
+    if (!updated)
+      return res.status(401).json({ code: "INVALID_TOKEN", message: "Account no longer exists" });
     res.json(updated);
   } catch (err) {
-    console.error(err);
+    console.error("Profile update failed:", err.code || "unexpected error");
     res.status(500).json({ error: "Error updating profile" });
   }
 }

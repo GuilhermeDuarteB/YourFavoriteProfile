@@ -24,6 +24,8 @@ export async function putTopFive(req, res) {
     const updated = await getTopFiveByUser(req.userId);
     res.json(updated);
   } catch (err) {
+    if (err.code === 'TOP_FIVE_UNAVAILABLE') return res.status(409).json({ error: err.message });
+    if (err.code === 'MEDIA_UNAVAILABLE') return res.status(400).json({ error: err.message });
     if (err.code === '23503') return res.status(400).json({ error: 'One or more media IDs do not exist' });
     console.error(err);
     res.status(500).json({ error: 'Error updating top 5' });

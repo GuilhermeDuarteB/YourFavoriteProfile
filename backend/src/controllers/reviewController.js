@@ -88,6 +88,9 @@ export async function postReview(req, res) {
 
 export async function getMediaReviews(req, res) {
   try {
+    if (!await findMediaById(req.params.mediaId)) {
+      return res.status(404).json({ error: "Media unavailable" });
+    }
     const reviews = await getReviewsByMedia(req.params.mediaId);
     res.json(reviews);
   } catch (err) {
@@ -98,6 +101,9 @@ export async function getMediaReviews(req, res) {
 
 export async function getEpisodeReviews(req, res) {
   try {
+    if (!await findEpisodeById(req.params.episodeId)) {
+      return res.status(404).json({ error: "Episode unavailable" });
+    }
     const reviews = await getReviewsByEpisode(req.params.episodeId);
     res.json(reviews);
   } catch (err) {

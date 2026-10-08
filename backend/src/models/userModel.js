@@ -73,8 +73,10 @@ export async function getUserStats(userId) {
 
 export async function updateUserProfile(userId, { bio, avatarUrl }) {
   const result = await pools.query(
-    `UPDATE users SET bio = $1, avatar_url = $2 WHERE id = $3 RETURNING id,username,email,bio,avatar_url,created_at`,
-    [bio, avatarUrl, userId],
+    `UPDATE users SET bio = CASE WHEN $4::boolean THEN $1 ELSE bio END,
+      avatar_url = CASE WHEN $5::boolean THEN $2 ELSE avatar_url END
+      WHERE id = $3 RETURNING id,username,email,bio,avatar_url,created_at`,
+    [bio ?? null, avatarUrl ?? null, userId, bio !== undefined, avatarUrl !== undefined],
   );
   return result.rows[0];
 }

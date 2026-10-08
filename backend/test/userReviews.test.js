@@ -186,7 +186,7 @@ test("type, parent genre and minimum score filters use bound values and retain u
     res.body.reviews.map((review) => review.id),
     [3],
   );
-  assert.deepEqual(calls[1].values, [1, null, "Drama", 8, 20, 0]);
+  assert.deepEqual(calls[1].values, [1, null, "Drama", 8, 20, 0, []]);
   assert.deepEqual(res.body.availableGenres, ["Action", "Adventure", "Drama"]);
   const fiveStars = await getUserReviewPage(1, { minScore: 10 });
   assert.deepEqual(
@@ -226,7 +226,7 @@ test("all sorting choices and server pagination are deterministic and bounded", 
   );
   assert.equal(res.body.totalPages, 2);
   assert.equal(res.body.page, 2);
-  assert.deepEqual(calls[1].values.slice(4), [2, 2]);
+  assert.deepEqual(calls[1].values.slice(4), [2, 2, []]);
   const outside = await getUserReviewPage(1, { page: 10, pageSize: 2 });
   assert.deepEqual(outside.reviews, []);
   assert.equal(outside.total, 4);

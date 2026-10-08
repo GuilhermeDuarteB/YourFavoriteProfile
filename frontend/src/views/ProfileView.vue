@@ -7,6 +7,7 @@ import NavBar from "../components/NavBar.vue";
 import Footer from "../components/Footer.vue";
 import FollowButton from "../components/FollowButton.vue";
 import GenreRadar from "../components/GenreRadar.vue";
+import FollowListDialog from "../components/FollowListDialog.vue";
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -14,6 +15,8 @@ const authStore = useAuthStore();
 const profile = ref(null);
 const loading = ref(true);
 const error = ref("");
+const followList = ref("");
+const bioExpanded = ref(false);
 
 const isOwnProfile = computed(
   () => !!authStore.user && profile.value?.id === authStore.user.id,
@@ -25,6 +28,8 @@ async function loadProfile() {
   loading.value = true;
   error.value = "";
   profile.value = null;
+  followList.value = "";
+  bioExpanded.value = false;
   try {
     const res = await api.get(
       `/users/${encodeURIComponent(route.params.username)}`,
@@ -106,7 +111,7 @@ watch(() => route.params.username, loadProfile, { immediate: true });
               </svg>
               Member since {{ formatDate(profile.createdAt) }}
             </p>
-            <p class="bio">
+            <p id="profile-bio-text" class="bio" :class="{ collapsed: !bioExpanded }">
               {{
                 profile.bio ||
                 (isOwnProfile
@@ -114,6 +119,14 @@ watch(() => route.params.username, loadProfile, { immediate: true });
                   : "No bio yet.")
               }}
             </p>
+            <button
+              v-if="profile.bio && (profile.bio.length > 120 || profile.bio.split('\n').length > 3)"
+              type="button"
+              class="bio-toggle"
+              :aria-expanded="bioExpanded"
+              aria-controls="profile-bio-text"
+              @click="bioExpanded = !bioExpanded"
+            >{{ bioExpanded ? 'Show less' : 'Show more' }}</button>
 
             <router-link
               v-if="isOwnProfile"
@@ -158,14 +171,14 @@ watch(() => route.params.username, loadProfile, { immediate: true });
           </div>
           <div class="stat-label">Avg. score given</div>
         </div>
-        <div class="stat-card">
+        <button type="button" class="stat-card stat-link" aria-haspopup="dialog" @click="followList = 'followers'">
           <div class="stat-value">{{ profile.followCounts.followers }}</div>
           <div class="stat-label">Followers</div>
-        </div>
-        <div class="stat-card">
+        </button>
+        <button type="button" class="stat-card stat-link" aria-haspopup="dialog" @click="followList = 'following'">
           <div class="stat-value">{{ profile.followCounts.following }}</div>
           <div class="stat-label">Following</div>
-        </div>
+        </button>
       </div>
 
       <section class="section">
@@ -212,6 +225,12 @@ watch(() => route.params.username, loadProfile, { immediate: true });
           </div>
         </div>
       </section>
+      <FollowListDialog
+        v-if="followList"
+        :username="profile.username"
+        :initial-tab="followList"
+        @close="followList = ''"
+      />
 
       <section class="section">
         <div class="section-head">
@@ -311,7 +330,7 @@ watch(() => route.params.username, loadProfile, { immediate: true });
 .hero {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 40px;
   align-items: center;
   padding: 56px 56px 48px;
@@ -334,7 +353,11 @@ watch(() => route.params.username, loadProfile, { immediate: true });
   display: flex;
   gap: 28px;
   z-index: 1;
+  min-width: 0;
+  width: 100%;
 }
+
+.hero-info { min-width: 0; max-width: 100%; }
 
 .avatar {
   width: 104px;
@@ -360,6 +383,7 @@ watch(() => route.params.username, loadProfile, { immediate: true });
   margin: 0 0 6px;
   color: var(--text);
   letter-spacing: -0.3px;
+  overflow-wrap: anywhere;
 }
 .joined {
   display: flex;
@@ -375,7 +399,13 @@ watch(() => route.params.username, loadProfile, { immediate: true });
   line-height: 1.5;
   margin: 0 0 16px;
   max-width: 460px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
+.bio.collapsed { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.bio-toggle { display: block; margin: -8px 0 16px; padding: 0; border: 0; background: none; color: var(--blue); font: inherit; font-size: 12px; cursor: pointer; }
+.bio-toggle:focus-visible, .stat-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.stat-link { cursor: pointer; font: inherit; min-width: 0; }
 
 .icon-sm {
   width: 14px;
@@ -555,6 +585,7 @@ watch(() => route.params.username, loadProfile, { immediate: true });
     flex-direction: column;
     align-items: center;
   }
+  .bio-toggle { margin-left: auto; margin-right: auto; }
   .bio {
     max-width: 100%;
   }

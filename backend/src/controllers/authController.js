@@ -80,9 +80,7 @@ export async function login(req, res) {
 
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
     if (!passwordMatch) {
-      console.warn(
-        `[AUTH] Failed login attempt for email: ${email} at ${new Date().toISOString()}`,
-      );
+      console.warn("[AUTH] Failed login attempt");
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
@@ -96,6 +94,21 @@ export async function login(req, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function getCurrentUser(req, res) {
+  try {
+    const user = await findUserById(req.userId);
+    if (!user) {
+      return res
+        .status(401)
+        .json({ code: "INVALID_TOKEN", message: "Account no longer exists" });
+    }
+    res.json(user);
+  } catch {
+    console.error("Error loading current account");
+    res.status(500).json({ error: "Error loading current account" });
   }
 }
 

@@ -1,4 +1,5 @@
 import { pools } from "../config/db.js";
+import { isBlockedMedia } from "../utils/moderation.js";
 
 export async function addToWatchlist(
   userId,
@@ -34,7 +35,7 @@ export async function getWatchlistByUser(userId, status = null) {
        ORDER BY w.added_at DESC`;
   const params = status ? [userId, status] : [userId];
   const result = await pools.query(query, params);
-  return result.rows;
+  return result.rows.filter((media) => !isBlockedMedia(media));
 }
 
 export async function findWatchlistEntry(userId, mediaId) {

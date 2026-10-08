@@ -265,6 +265,7 @@ test("top five keeps the transaction and rolls back unknown media IDs", async ()
       statements.push(sql);
       if (failInsert && sql.startsWith("INSERT"))
         throw Object.assign(new Error("Foreign key"), { code: "23503" });
+      return { rows: [] };
     },
     release() {
       statements.push("RELEASE");

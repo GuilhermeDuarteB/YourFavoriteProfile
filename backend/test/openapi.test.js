@@ -23,6 +23,8 @@ test("OpenAPI document parses and covers the mounted API groups", () => {
     "/api/auth/me",
     "/api/users/search",
     "/api/users/{username}/reviews",
+    "/api/users/{username}/followers",
+    "/api/users/{username}/following",
     "/api/users/{username}",
     "/api/users/me",
     "/api/media/trending",
@@ -52,6 +54,7 @@ test("OpenAPI document parses and covers the mounted API groups", () => {
     ["/api/auth/me/email", "put"],
     ["/api/auth/me/username", "put"],
     ["/api/auth/me", "delete"],
+    ["/api/auth/me", "get"],
     ["/api/users/me", "put"],
     ["/api/reviews", "post"],
     ["/api/reviews/{id}", "put"],
@@ -76,6 +79,8 @@ test("OpenAPI document parses and covers the mounted API groups", () => {
     ["/api/auth/login", "post"],
     ["/api/users/search", "get"],
     ["/api/users/{username}/reviews", "get"],
+    ["/api/users/{username}/followers", "get"],
+    ["/api/users/{username}/following", "get"],
     ["/api/media/trending", "get"],
     ["/api/media/latest-episodes", "get"],
     ["/api/media/discover", "get"],
@@ -168,6 +173,33 @@ test("username identity and public profile ID are documented", () => {
     document.paths["/api/auth/me/username"].put.description,
     /Case-only changes/,
   );
+});
+
+test("profile moderation, private session refresh and public paginated follow fields are documented", () => {
+  const document = YAML.parse(fs.readFileSync(openApiPath, "utf8"));
+  const bio = document.paths["/api/users/me"].put.requestBody.content["application/json"].schema.properties.bio;
+  assert.equal(bio.maxLength, 280);
+  assert.equal(bio.nullable, true);
+  assert.ok(document.paths["/api/users/me"].put.responses["400"]);
+  assert.deepEqual(document.paths["/api/auth/me"].get.security, [{ bearerAuth: [] }]);
+  for (const [path, method] of [
+    ["/api/media/{type}/{id}", "get"],
+    ["/api/media/series/{id}/season/{seasonNumber}", "get"],
+    ["/api/reviews/media/{mediaId}", "get"],
+    ["/api/reviews/episode/{episodeId}", "get"],
+    ["/api/watchlist", "post"],
+  ]) {
+    assert.ok(document.paths[path][method].responses["404"], path);
+  }
+  assert.deepEqual(Object.keys(document.components.schemas.PublicFollowUser.properties), ["id", "username", "avatarUrl"]);
+  for (const direction of ["followers", "following"]) {
+    const endpoint = document.paths[`/api/users/{username}/${direction}`].get;
+    const size = endpoint.parameters.find((parameter) => parameter.name === "pageSize");
+    assert.equal(size.schema.default, 20);
+    assert.equal(size.schema.maximum, 50);
+    assert.ok(endpoint.responses["400"]);
+    assert.ok(endpoint.responses["404"]);
+  }
 });
 
 test("review scores use OpenAPI 3.0 exclusive minimum and allow positive fractions", () => {

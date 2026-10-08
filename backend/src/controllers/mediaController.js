@@ -22,6 +22,7 @@ import {
 
 import { findOrCreateMedia, findOrCreateSeason, findOrCreateEpisode } from "../models/mediaModel.js";
 import { getMediaRating, getSeriesMedia } from "../models/reviewModel.js";
+import { isBlockedMedia } from "../utils/moderation.js";
 
 function formatMovie(item) {
   return {
@@ -85,12 +86,13 @@ export async function getTrending(req, res) {
 
     const movies = tmdbResults
       .filter((item) => item.media_type === "movie" || item.media_type === "tv")
+      .filter((item) => !isBlockedMedia(item))
       .slice(0, 4)
       .map((item) =>
         item.media_type === "tv" ? formatSeries(item) : formatMovie(item),
       );
 
-    const games = rawgResults.slice(0, 2).map(formatGame);
+    const games = rawgResults.filter((item) => !isBlockedMedia(item)).slice(0, 2).map(formatGame);
 
     if (tmdb.status === "rejected" && rawg.status === "rejected") {
       return res.status(502).json({ error: "Trending providers unavailable" });
@@ -111,10 +113,11 @@ export async function getLatestEpisodes(req, res) {
     const seriesDetails = await getTrendingSeriesWithDetails();
 
     const episodes = seriesDetails
+      .filter((show) => !isBlockedMedia(show))
       .map((show) => {
         const lastEp = show.last_episode_to_air;
 
-        if (!lastEp) return null;
+        if (!lastEp || isBlockedMedia(lastEp)) return null;
 
         return {
           code: `S${lastEp.season_number}E${lastEp.episode_number}`,
@@ -149,6 +152,7 @@ function filterSearch(items, type, { genre, decade, minRating }) {
     : type === "movie" ? TMDB_MOVIES_GENRES : TMDB_TV_GENRES;
   const genreValue = Object.hasOwn(genres, genre) ? genres[genre] : undefined;
   return items.filter((item) => {
+    if (isBlockedMedia(item)) return false;
     const score = type === "game" ? (item.rating == null ? null : item.rating * 2) : item.vote_average;
     if (minRating > 0 && (score == null || score < minRating)) return false;
     const date = type === "game" ? item.released : type === "movie" ? item.release_date : item.first_air_date;
@@ -198,7 +202,7 @@ export async function getDiscover(req, res) {
       }
       if (type === "game") {
         const data = await discoverGames({ ...filters, page: pageNum, pageSize: perType });
-        return { results: data.results.map(formatGame), hasMore: data.hasMore };
+        return { results: data.results.filter((item) => !isBlockedMedia(item)).map(formatGame), hasMore: data.hasMore };
       }
       const startIndex = (pageNum - 1) * perType;
       const startPage = Math.floor(startIndex / TMDB_PAGE_SIZE) + 1;
@@ -207,7 +211,8 @@ export async function getDiscover(req, res) {
       const raw = await discover({ ...filters, startPage, endPage });
       const offset = startIndex % TMDB_PAGE_SIZE;
       const items = raw.slice(offset, offset + perType);
-      return { results: items.map(formatters[type]), hasMore: items.length === perType };
+      // Keep the provider cursor moving even if moderation hides this entire page.
+      return { results: items.filter((item) => !isBlockedMedia(item)).map(formatters[type]), hasMore: items.length === perType };
     }));
     const results = [];
     let hasMore = false;
@@ -260,6 +265,7 @@ export async function getMediaDetails(req, res) {
     let detail;
     if (type === "movie") {
       const raw = await getMovieDetails(id);
+      if (isBlockedMedia(raw)) return res.status(404).json({ error: "Media unavailable" });
       detail = {
         externalId: String(raw.id),
         source: "tmdb",
@@ -282,6 +288,7 @@ export async function getMediaDetails(req, res) {
       };
     } else if (type === "series") {
       const raw = await getSeriesDetails(id);
+      if (isBlockedMedia(raw)) return res.status(404).json({ error: "Media unavailable" });
       detail = {
         externalId: String(raw.id),
         source: "tmdb",
@@ -302,7 +309,7 @@ export async function getMediaDetails(req, res) {
             : null,
         })),
         seasons: (raw.seasons || [])
-          .filter((s) => s.season_number > 0)
+          .filter((s) => s.season_number > 0 && !isBlockedMedia(s))
           .map((s) => ({
             seasonNumber: s.season_number,
             name: s.name,
@@ -311,6 +318,7 @@ export async function getMediaDetails(req, res) {
       };
     } else if (type === "game") {
       const raw = await getGameDetails(id);
+      if (isBlockedMedia(raw)) return res.status(404).json({ error: "Media unavailable" });
       detail = {
         externalId: String(raw.id),
         source: "rawg",
@@ -337,6 +345,7 @@ export async function getMediaDetails(req, res) {
       releaseDate: detail.releaseDate || null,
       genres: detail.genres,
     });
+    if (isBlockedMedia(media)) return res.status(404).json({ error: "Media unavailable" });
 
     const communityScore = type === "series"
       ? await getSeriesMedia(media.id)
@@ -358,16 +367,22 @@ export async function getSeasonEpisodes(req, res) {
     const [series, seasonData] = await Promise.all([
       getSeriesDetails(id), getSeasonDetails(id, Number(seasonNumber)),
     ]);
+    if (isBlockedMedia(series) || isBlockedMedia(seasonData)) {
+      return res.status(404).json({ error: "Media unavailable" });
+    }
     const media = await findOrCreateMedia({
       externalId: String(series.id), source: "tmdb", type: "series", title: series.name,
       posterUrl: series.poster_path ? `https://image.tmdb.org/t/p/w500${series.poster_path}` : null,
       releaseDate: series.first_air_date || null, genres: series.genres?.map((genre) => genre.name) || [],
     });
     if (media.type !== "series") throw new Error("Local media identity is not a series");
+    if (isBlockedMedia(media)) return res.status(404).json({ error: "Media unavailable" });
     const season = await findOrCreateSeason(media.id, Number(seasonNumber), seasonData.name);
     const episodes = [];
     for (const raw of seasonData.episodes || []) {
+      if (isBlockedMedia(raw)) continue;
       const episode = await findOrCreateEpisode(season.id, raw.episode_number, raw.name, raw.air_date);
+      if (isBlockedMedia(episode)) continue;
       episodes.push({
         episodeId: episode.id, episodeNumber: raw.episode_number, title: raw.name,
         overview: raw.overview || "", airDate: raw.air_date || null,

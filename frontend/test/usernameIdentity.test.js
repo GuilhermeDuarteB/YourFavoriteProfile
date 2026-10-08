@@ -42,7 +42,7 @@ function mount(view, api, username = "GUILHERME") {
   ).descriptor;
   const exports =
     view === "ProfileView"
-      ? "profile, loading, error, isOwnProfile, formatDate, updateFollowing, authStore"
+      ? "profile, loading, error, isOwnProfile, formatDate, updateFollowing, authStore, followList, bioExpanded"
       : "route, owner, items, loading, error, activeStatus, statuses, isOwnWatchlist, removeItem, updateStatus";
   const scope = effectScope();
   const state = scope.run(() =>
@@ -65,7 +65,7 @@ function mount(view, api, username = "GUILHERME") {
     ),
   );
   const components = Object.fromEntries(
-    ["NavBar", "Footer", "GenreRadar", "MediaCard"].map((name) => [
+    ["NavBar", "Footer", "GenreRadar", "MediaCard", "FollowListDialog"].map((name) => [
       name,
       { render: () => h("div") },
     ]),
@@ -132,6 +132,32 @@ test("alternate-case profiles use IDs for edit/follow controls and canonical rev
   } finally {
     page.stop();
   }
+});
+
+test("profile preserves long bios, offers an accessible expansion, and exposes both connection buttons to owners", async () => {
+  const bio = "LongUnbrokenBio".repeat(100);
+  const page = mount("ProfileView", { get: async () => ({ data: { ...profile(), bio } }) });
+  try {
+    await settle();
+    const html = await page.html();
+    assert.ok(html.includes(bio));
+    assert.match(html, /class="bio collapsed"/);
+    assert.match(html, /aria-expanded="false"/);
+    assert.equal((html.match(/aria-haspopup="dialog"/g) || []).length, 2);
+    page.state.bioExpanded.value = true;
+    assert.match(await page.html(), /Show less/);
+    page.state.updateFollowing(true);
+    assert.equal(page.state.profile.value.followCounts.followers, 1);
+    page.state.updateFollowing(true);
+    assert.equal(page.state.profile.value.followCounts.followers, 1);
+    page.state.updateFollowing(false);
+    assert.equal(page.state.profile.value.followCounts.followers, 0);
+    page.state.followList.value = "followers";
+    page.route.params.username = "Other";
+    await settle();
+    assert.equal(page.state.followList.value, "");
+    assert.equal(page.state.bioExpanded.value, false);
+  } finally { page.stop(); }
 });
 
 test("watchlist resolves owner ID, shows canonical casing and caches identity across filters", async () => {

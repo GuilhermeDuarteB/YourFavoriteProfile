@@ -31,6 +31,22 @@ export const useAuthStore = defineStore("auth", {
   },
 
   actions: {
+    async refreshSession() {
+      const token = this.token;
+      if (!token) return;
+      try {
+        const { data: user } = await api.get("/auth/me");
+        // A delayed response must not replace a newer account or logged-out state.
+        if (this.token === token) {
+          this.user = user;
+          localStorage.setItem("user", JSON.stringify(user));
+        }
+      } catch {
+        // The interceptor clears invalid sessions. Transient failures retain it.
+        console.warn("Unable to refresh account details");
+      }
+    },
+
     async register({ username, email, password }) {
       const res = await api.post("/auth/register", {
         username,

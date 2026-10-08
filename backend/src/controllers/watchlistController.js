@@ -4,15 +4,22 @@ import {
   getWatchlistByUser,
   findWatchlistEntry,
 } from '../models/watchlistModel.js';
+import { findMediaById } from '../models/mediaModel.js';
 
 const VALID_STATUSES = ['want_to_watch', 'watching', 'completed', 'dropped'];
 
 export async function postWatchlist(req, res) {
   try {
-    const { mediaId, status } = req.body;
-    if (!mediaId) return res.status(400).json({ error: 'mediaId is required' });
+    const { mediaId, status } = req.body || {};
+    if (!["number", "string"].includes(typeof mediaId) || !/^\d+$/.test(String(mediaId)) || !Number.isSafeInteger(Number(mediaId)) || Number(mediaId) <= 0) {
+      return res.status(400).json({ error: 'mediaId must be a positive integer' });
+    }
     if (status && !VALID_STATUSES.includes(status)) {
       return res.status(400).json({ error: `Status must be one of: ${VALID_STATUSES.join(', ')}` });
+    }
+
+    if (!await findMediaById(mediaId)) {
+      return res.status(404).json({ error: 'Media unavailable' });
     }
 
     const entry = await addToWatchlist(req.userId, mediaId, status || 'want_to_watch');

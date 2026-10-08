@@ -1,4 +1,5 @@
 import axios from "axios";
+import { isBlockedMedia } from "../utils/moderation.js";
 
 const tmdb = axios.create({
   baseURL: "https://api.themoviedb.org/3",
@@ -24,7 +25,7 @@ export async function getTrendingTmdb() {
 
 export async function getTrendingSeriesWithDetails() {
   const trendingRes = await tmdb.get("/trending/tv/week");
-  const topSeries = trendingRes.data.results.slice(0, 4);
+  const topSeries = trendingRes.data.results.filter((series) => !isBlockedMedia(series)).slice(0, 4);
 
   const detailed = await Promise.allSettled(
     topSeries.map((series) => tmdb.get(`/tv/${series.id}`)),

@@ -6,7 +6,11 @@ info:
   description: >
     REST API for Your Favorite Profile, supporting authentication,
     media discovery, reviews, public profiles, follows, watchlists
-    and Top 5 media.
+    and Top 5 media. Explicit slurs covered by the server moderation policy are
+    rejected in usernames, bios and review comments. Matching media titles are
+    omitted from discovery and stored media lists without deleting records;
+    blocked direct media/episode requests return a generic 404. Legacy blocked
+    bios and review comments are hidden in public responses.
 
 servers:
   - url: http://localhost:3000
@@ -66,6 +70,45 @@ components:
         token:
           type: string
           description: JWT access token.
+
+    PublicFollowUser:
+      type: object
+      additionalProperties: false
+      required: [id, username, avatarUrl]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+          description: Current stored display casing.
+        avatarUrl:
+          type: string
+          nullable: true
+
+    FollowPage:
+      type: object
+      required: [username, users, page, pageSize, total, totalPages]
+      properties:
+        username:
+          type: string
+          description: Canonical username of the profile being viewed.
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicFollowUser"
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 50
+        total:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
 
     MediaCard:
       type: object
@@ -576,7 +619,7 @@ paths:
       tags:
         - Auth
       summary: Register a new user
-      description: Creates a new account and returns the authenticated user/session data. Usernames are unique case-insensitively and retain their submitted display casing.
+      description: Creates a new account and returns the authenticated user/session data. Usernames are unique case-insensitively and retain their submitted display casing. Usernames containing an explicit slur covered by the server moderation policy are rejected with 400 without echoing the input.
 
       requestBody:
         required: true
@@ -723,7 +766,7 @@ paths:
       tags:
         - Auth
       summary: Update account username
-      description: Updates the authenticated user's username after password confirmation. Case-only changes by the same user are allowed; names owned by another user are rejected ignoring case. Display casing is preserved and ID-based relationships remain unchanged. Old names do not become aliases.
+      description: Updates the authenticated user's username after password confirmation. Case-only changes by the same user are allowed; names owned by another user are rejected ignoring case. Display casing is preserved and ID-based relationships remain unchanged. Old names do not become aliases. The same server-side moderation policy as registration applies.
 
       security:
         - bearerAuth: []
@@ -771,6 +814,23 @@ paths:
           description: Internal server error
 
   /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get the current account
+      description: Resolves the JWT user ID to the current username and private editable profile. Allows persisted sessions to refresh after an administrator renames an account. Returns only the authenticated account; never returns password hashes. A legacy bio is available here for its owner to edit even when hidden from public profiles.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Invalid token or account no longer exists (INVALID_TOKEN)
+        "500":
+          description: Error loading current account
     delete:
       tags:
         - Auth
@@ -900,6 +960,84 @@ paths:
         "500":
           description: Error loading user reviews
 
+  /api/users/{username}/followers:
+    get:
+      tags: [Users]
+      summary: List a profile's followers
+      description: Public, case-insensitive username lookup. Lists safe public account fields ordered by lowercase username then ID; includes no emails or private profile fields. Pages beyond the end return an empty users array.
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000000
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: Followers and pagination metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowPage"
+        "400":
+          description: Invalid pagination parameters
+        "404":
+          description: User not found
+        "500":
+          description: Error loading followers
+
+  /api/users/{username}/following:
+    get:
+      tags: [Users]
+      summary: List the accounts a profile follows
+      description: Public, case-insensitive username lookup. Lists safe public account fields ordered by lowercase username then ID; includes no emails or private profile fields. Pages beyond the end return an empty users array.
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000000
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: Followed accounts and pagination metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowPage"
+        "400":
+          description: Invalid pagination parameters
+        "404":
+          description: User not found
+        "500":
+          description: Error loading following accounts
+
   /api/users/{username}:
     get:
       tags:
@@ -912,6 +1050,8 @@ paths:
         the current viewer follows the profile.
         Username lookup is case-insensitive. The response includes the stable
         user ID and stored display casing; URL casing does not change ownership.
+        Bios blocked by the moderation policy are returned as null. Stored media
+        with blocked titles are omitted from recent reviews and Top 5 without deleting records.
 
       security:
         - {}
@@ -990,7 +1130,7 @@ paths:
       tags:
         - Users
       summary: Update current user's public profile
-      description: Updates the authenticated user's bio and avatar URL.
+      description: Updates supplied bio/avatar fields only; omitted fields retain their stored values. Bio accepts text up to 280 UTF-16 code units or null. Empty string/null clears it. Explicit slurs covered by the centralized moderation policy are rejected. Existing stored bios are never automatically shortened or overwritten.
 
       security:
         - bearerAuth: []
@@ -1005,6 +1145,7 @@ paths:
                 bio:
                   type: string
                   nullable: true
+                  maxLength: 280
                   example: Software developer and movie fan.
 
                 avatarUrl:
@@ -1020,6 +1161,9 @@ paths:
               schema:
                 type: object
                 additionalProperties: true
+
+        "400":
+          description: Invalid body or bio/avatar types, excessive bio length, or disallowed content
 
         "401":
           description: Authentication required or invalid token
@@ -1220,6 +1364,8 @@ paths:
                 $ref: "#/components/schemas/SeasonEpisodes"
         "400":
           description: Series ID or season number is not a positive integer
+        "404":
+          description: Series or season is unavailable under the title moderation policy
         "500":
           description: Provider or database failure loading season episodes
 
@@ -1263,6 +1409,9 @@ paths:
         "400":
           description: Invalid media type
 
+        "404":
+          description: Media unavailable under the title moderation policy
+
         "500":
           description: Error loading media details
 
@@ -1276,6 +1425,7 @@ paths:
         Series must be reviewed by episode; a series mediaId is rejected with 400.
         Exactly one of mediaId or episodeId must be provided.
         A user may only have one review for the same media or episode.
+        Comments are subject to the same explicit-slur moderation policy as bios.
 
       security:
         - bearerAuth: []
@@ -1345,7 +1495,7 @@ paths:
       tags:
         - Reviews
       summary: Get reviews for a media item
-      description: Returns all reviews associated with a media item.
+      description: Returns reviews for available media. Legacy comments matching the moderation policy are returned as null without changing stored reviews.
 
       parameters:
         - in: path
@@ -1365,6 +1515,9 @@ paths:
                 items:
                   $ref: "#/components/schemas/Review"
 
+        "404":
+          description: Media not found or unavailable
+
         "500":
           description: Error loading reviews
 
@@ -1373,7 +1526,7 @@ paths:
       tags:
         - Reviews
       summary: Get reviews for an episode
-      description: Returns all reviews associated with a TV episode.
+      description: Returns reviews for an available TV episode. Legacy comments matching the moderation policy are returned as null without changing stored reviews.
 
       parameters:
         - in: path
@@ -1392,6 +1545,9 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Review"
+
+        "404":
+          description: Episode not found or unavailable
 
         "500":
           description: Error loading reviews
@@ -1544,6 +1700,9 @@ paths:
 
         "401":
           description: Authentication required or invalid token
+
+        "404":
+          description: Media not found or unavailable
 
         "500":
           description: Error adding to watchlist
@@ -1758,6 +1917,9 @@ paths:
         Replaces the authenticated user's Top 5 media list.
         Up to five entries may be supplied.
         Media IDs and ranks must be unique, and ranks must be between 1 and 5.
+        Titles blocked by the server moderation policy cannot be selected.
+        A replacement that would remove hidden existing entries is rejected
+        so those records remain intact pending an explicit maintenance decision.
 
       security:
         - bearerAuth: []
@@ -1807,6 +1969,9 @@ paths:
 
         "500":
           description: Error updating Top 5
+
+        "409":
+          description: Existing hidden Top 5 entries require manual review before replacement
 
   /api/top-five/{username}:
     get:

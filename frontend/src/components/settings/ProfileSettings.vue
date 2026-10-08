@@ -7,6 +7,7 @@ import TopFiveEditor from "./TopFiveEditor.vue";
 const authStore = useAuthStore();
 
 const bio = ref("");
+const savedBio = ref("");
 const avatarUrl = ref("");
 const profileError = ref("");
 const profileSuccess = ref("");
@@ -17,9 +18,10 @@ async function loadCurrentProfile() {
   if (!username) return;
 
   try {
-    const res = await api.get(`/users/${encodeURIComponent(username)}`);
+    const res = await api.get("/auth/me");
     bio.value = res.data.bio || "";
-    avatarUrl.value = res.data.avatarUrl || "";
+    savedBio.value = bio.value;
+    avatarUrl.value = res.data.avatar_url || "";
   } catch {
     profileError.value = "Error loading profile";
   }
@@ -30,7 +32,10 @@ async function saveProfile() {
   profileSuccess.value = "";
   profileSaving.value = true;
   try {
-    await api.put("/users/me", { bio: bio.value, avatarUrl: avatarUrl.value });
+    const update = { avatarUrl: avatarUrl.value };
+    if (bio.value !== savedBio.value) update.bio = bio.value;
+    await api.put("/users/me", update);
+    savedBio.value = bio.value;
     profileSuccess.value = "Profile updated.";
   } catch (err) {
     profileError.value = err.response?.data?.error || "Error updating profile";
@@ -64,9 +69,12 @@ watch(() => authStore.user?.username, loadCurrentProfile);
           id="profile-bio"
           v-model="bio"
           maxlength="280"
+          aria-describedby="profile-bio-count"
+          :aria-invalid="bio.length > 280"
           rows="4"
           placeholder="Tell people about yourself..."
         ></textarea>
+        <p id="profile-bio-count" class="bio-count" :class="{ error: bio.length > 280 }">{{ bio.length }} / 280</p>
       </div>
 
       <div class="field">
@@ -164,6 +172,8 @@ watch(() => authStore.user?.username, loadCurrentProfile);
 .field textarea {
   resize: vertical;
 }
+
+.bio-count { margin: 6px 0 0; color: var(--text-mute); font-size: 12px; text-align: right; }
 
 .field input:focus,
 .field textarea:focus {

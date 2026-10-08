@@ -55,6 +55,7 @@ const stubs = Object.fromEntries(
     "StarRating",
     "FollowButton",
     "GenreRadar",
+    "FollowListDialog",
   ].map((name) => [
     name,
     { render: () => h("div", { "data-component": name }) },
@@ -100,7 +101,13 @@ function render(file, state, props = {}) {
   return renderToString(
     createSSRApp({
       components: stubs,
-      setup: () => ({ existingReview: null, ...props, ...state }),
+      setup: () => ({
+        existingReview: null,
+        followList: ref(""),
+        bioExpanded: ref(false),
+        ...props,
+        ...state,
+      }),
       render: compile(descriptor(file).template.content),
     }),
   );

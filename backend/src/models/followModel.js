@@ -37,3 +37,27 @@ export async function getFollowCounts(userId) {
     following: Number(result.rows[0].following),
   };
 }
+
+export async function getFollowList(userId, direction, page, pageSize) {
+  // The identifiers come only from this fixed mapping, never from user input.
+  const columns = {
+    followers: { owner: "following_id", member: "follower_id" },
+    following: { owner: "follower_id", member: "following_id" },
+  }[direction];
+  if (!columns) throw new Error("Invalid follow list direction");
+
+  const [count, result] = await Promise.all([
+    pools.query(
+      `SELECT COUNT(*) AS total FROM follows WHERE ${columns.owner} = $1`,
+      [userId],
+    ),
+    pools.query(
+      `SELECT u.id, u.username, u.avatar_url AS "avatarUrl"
+       FROM follows f JOIN users u ON u.id = f.${columns.member}
+       WHERE f.${columns.owner} = $1
+       ORDER BY LOWER(u.username), u.id LIMIT $2 OFFSET $3`,
+      [userId, pageSize, (page - 1) * pageSize],
+    ),
+  ]);
+  return { users: result.rows, total: Number(count.rows[0].total) };
+}

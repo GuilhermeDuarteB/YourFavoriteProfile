@@ -1,4 +1,14 @@
 import { pools } from "../config/db.js";
+import { containsBlockedContent, isBlockedMedia } from "../utils/moderation.js";
+
+function publicReview(review) {
+  return containsBlockedContent(review.comment) ? { ...review, comment: null } : review;
+}
+
+function blockedReviewTitle(review) {
+  return isBlockedMedia({ title: review.mediaTitle ?? review.title }) ||
+    isBlockedMedia({ title: review.episodeTitle ?? review.episode_title });
+}
 
 export async function createReview({
   userId,
@@ -24,7 +34,7 @@ export async function getReviewsByMedia(mediaId) {
         ORDER BY r.created_at DESC`,
     [mediaId],
   );
-  return result.rows;
+  return result.rows.map(publicReview);
 }
 
 export async function getReviewsByEpisode(episodeId) {
@@ -35,7 +45,7 @@ export async function getReviewsByEpisode(episodeId) {
         ORDER BY r.created_at DESC`,
     [episodeId],
   );
-  return result.rows;
+  return result.rows.map(publicReview);
 }
 
 export async function findReviewById(id) {
@@ -97,7 +107,7 @@ export async function getReviewsByUser(userId, limit = 6) {
     LIMIT $2`,
     [userId, limit],
   );
-  return result.rows;
+  return result.rows.filter((review) => !blockedReviewTitle(review)).map(publicReview);
 }
 
 export async function getUserReviewPage(
@@ -110,8 +120,7 @@ export async function getUserReviewPage(
     highest: 'score DESC, "createdAt" DESC, id DESC',
     lowest: 'score ASC, "createdAt" DESC, id DESC',
   };
-  const result = await pools.query(
-    `WITH user_reviews AS (
+  const query = `WITH user_reviews AS (
       SELECT r.id, r.score::float8 AS score, r.comment, r.created_at AS "createdAt",
         m.id AS "mediaId", m.external_id AS "externalId", m.type AS "mediaType",
         m.title AS "mediaTitle", m.poster_url AS "posterUrl", COALESCE(m.genres, ARRAY[]::text[]) AS genres,
@@ -121,34 +130,45 @@ export async function getUserReviewPage(
       LEFT JOIN episodes ep ON ep.id = r.episode_id
       LEFT JOIN seasons se ON se.id = ep.season_id
       JOIN media m ON m.id = COALESCE(r.media_id, se.media_id)
-      WHERE r.user_id = $1
+      WHERE r.user_id = $1 AND NOT (r.id = ANY($7::int[]))
     ), filtered_reviews AS (
       SELECT * FROM user_reviews
       WHERE ($2::text IS NULL OR "mediaType" = $2)
         AND ($3::text IS NULL OR $3 = ANY(genres))
         AND ($4::float8 IS NULL OR score >= $4)
     )
-    SELECT (SELECT COUNT(*) FROM user_reviews) AS "totalUserReviews",
+    SELECT COALESCE((SELECT json_agg(title_check) FROM (
+        SELECT id, "mediaTitle", "episodeTitle" FROM user_reviews
+      ) title_check), '[]'::json) AS "moderationCandidates",
+      (SELECT COUNT(*) FROM user_reviews) AS "totalUserReviews",
       (SELECT COUNT(*) FROM filtered_reviews) AS total,
       COALESCE((SELECT json_agg(review_page) FROM (
         SELECT * FROM filtered_reviews ORDER BY ${ordering[sort] || ordering.newest} LIMIT $5 OFFSET $6
       ) review_page), '[]'::json) AS reviews,
       COALESCE((SELECT json_agg(genre ORDER BY genre) FROM (
         SELECT DISTINCT unnest(genres) AS genre FROM user_reviews
-      ) genre_options WHERE genre IS NOT NULL AND genre <> ''), '[]'::json) AS "availableGenres"`,
-    [
+      ) genre_options WHERE genre IS NOT NULL AND genre <> ''), '[]'::json) AS "availableGenres"`;
+  const parameters = [
       userId,
       type || null,
       genre || null,
       minScore ?? null,
       pageSize,
       (page - 1) * pageSize,
-    ],
-  );
+      [],
+    ];
+  let result = await pools.query(query, parameters);
+  const blockedIds = (result.rows[0].moderationCandidates || [])
+    .filter(blockedReviewTitle).map((review) => review.id);
+  if (blockedIds.length) {
+    // Exclude before aggregation/pagination so totals, pages and genre options agree.
+    parameters[6] = blockedIds;
+    result = await pools.query(query, parameters);
+  }
   const row = result.rows[0];
   const total = Number(row.total);
   return {
-    reviews: row.reviews,
+    reviews: row.reviews.filter((review) => !blockedReviewTitle(review)).map(publicReview),
     page,
     pageSize,
     total,

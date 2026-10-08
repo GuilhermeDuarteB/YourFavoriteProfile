@@ -1,3 +1,8 @@
+import {
+  containsBlockedContent,
+  containsBlockedUsername,
+} from "./moderation.js";
+
 export function normalizeEmail(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
@@ -13,7 +18,19 @@ export function validateUsername(username) {
   if (!/^[a-zA-Z0-9_.]+$/.test(username)) {
     return "Username can only contain letters, numbers, dots, and underscores";
   }
+  if (containsBlockedUsername(username)) {
+    return "Choose a username without hateful language";
+  }
   return null;
+}
+
+export function validateBio(bio) {
+  if (bio == null) return null;
+  if (typeof bio !== "string") return "Bio must be text or null";
+  if (bio.length > 280) return "Bio must not exceed 280 characters";
+  return containsBlockedContent(bio)
+    ? "Bio must not contain hateful language"
+    : null;
 }
 
 export function validateEmail(email) {
@@ -43,5 +60,7 @@ export function validateReview(score, comment) {
   }
   if (comment != null && typeof comment !== "string")
     return "Comment must be text or null";
+  if (containsBlockedContent(comment))
+    return "Comment must not contain hateful language";
   return null;
 }
