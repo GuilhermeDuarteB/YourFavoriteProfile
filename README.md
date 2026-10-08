@@ -1,18 +1,34 @@
 # Your Favorite Profile
 
-Your Favorite Profile is a full-stack media discovery and community application for movies, TV series, and games. Users can discover titles, write reviews, build a public profile, follow other users, manage a watchlist, and curate a personal Top 5.
+Your Favorite Profile is a full-stack platform for discovering, tracking, reviewing, and sharing movies, TV series, and games.
+
+[Live demo](https://yourfavoriteprofile.vercel.app/) · [API documentation](https://yourfavoriteprofile-api.onrender.com/api-docs) · [GitHub repository](https://github.com/GuilhermeDuarteB/YourFavoriteProfile)
+
+Users can discover titles, write reviews, build a public profile, follow other users, manage a watchlist, and curate a personal Top 5. The project’s central idea is episode-level TV reviewing: users review episodes individually, then see a community series score calculated from those ratings.
 
 Movies and games use direct reviews. TV series are reviewed episode by episode through interactive season lists, and their community score is calculated from the averages of rated episodes. Provider scores from TMDB/RAWG remain separate from Your Favorite Profile community scores.
 
 ## Screenshots
 
-| Home | Browse |
+| Home | Browse and filters |
 | --- | --- |
-| ![Home](docs/screenshots/home.png) | ![Browse](docs/screenshots/browse.png) |
+| ![Your Favorite Profile home page](docs/screenshots/home.png) | ![Browse view with media filters](docs/screenshots/browse.png) |
 
-| Media detail | Public profile |
+| Media details | Episode-by-episode reviews |
 | --- | --- |
-| ![Media detail](docs/screenshots/media-detail.png) | ![Profile](docs/screenshots/profile.png) |
+| ![Media detail page](docs/screenshots/media-detail.png) | ![Series episode review view](docs/screenshots/series-episodes.png) |
+
+| Public profile | Watchlist management |
+| --- | --- |
+| ![Public user profile](docs/screenshots/profile.png) | ![Watchlist management](docs/screenshots/watchlist.png) |
+
+| Top 5 management |
+| --- |
+| ![Top 5 management](docs/screenshots/top-five.png) |
+
+### Mobile experience
+
+<img src="docs/screenshots/mobile.png" alt="Responsive mobile experience" width="360" />
 
 ## Current features
 
@@ -31,20 +47,24 @@ Movies and games use direct reviews. TV series are reviewed episode by episode t
 - Interactive OpenAPI API documentation with JWT-authenticated endpoint testing through Swagger UI
 - Responsive public UI, API rate limiting, CORS configuration, and startup environment/database checks
 
-## In development and roadmap
+## Roadmap
 
-- Production deployment and operational monitoring
-- Avatar uploads and broader automated UI coverage
+- Avatar uploads.
+- Further UI and end-to-end coverage as the product grows.
 
 ## Tech stack
 
-Frontend: Vue 3, Vite, Pinia, Vue Router, and Axios.
+| Area | Technologies |
+| --- | --- |
+| Frontend | Vue 3, Vite, Pinia, Vue Router, Axios |
+| Backend | Node.js 24, Express, JWT, bcrypt, express-rate-limit |
+| Database | PostgreSQL 18 locally and Neon PostgreSQL in production |
+| Integrations | [TMDB](https://www.themoviedb.org/) for movies and TV, [RAWG](https://rawg.io/apidocs) for games |
+| Testing | Node.js built-in `node:test`, disposable PostgreSQL integration tests |
+| Hosting | Vercel frontend, Render API, Neon database |
+| API specification | OpenAPI 3.0.3 and Swagger UI |
 
-Backend: Node.js, Express, PostgreSQL, JWT, bcrypt, express-rate-limit, OpenAPI 3, Swagger UI (`swagger-ui-express`), and a YAML-based API specification.
-
-External APIs: [TMDB](https://www.themoviedb.org/) for movies and series, and [RAWG](https://rawg.io/apidocs) for games.
-
-Testing uses Node's built-in `node:test` runner. GitHub Actions runs both unit/regression suites, the frontend production build, and real migration/concurrency tests with PostgreSQL 18.
+Yarn 1.22 is the project package manager. Frontend and backend each have their own `package.json` and `yarn.lock`.
 
 ## Architecture
 
@@ -88,7 +108,8 @@ YourFavoriteProfile/
 │   │   ├── router/          # Routes and auth guards
 │   │   ├── stores/          # Pinia stores
 │   │   └── views/           # Application pages
-│   └── test/                # Frontend behavior/regression tests
+│   ├── test/                # Frontend behavior/regression tests
+│   └── vercel.json          # SPA history-mode fallback
 ├── docs/screenshots/
 ├── YFP-Db.sql               # Final schema reference (not migration history)
 └── .github/workflows/ci.yml
@@ -155,27 +176,27 @@ Swagger UI is available at `http://localhost:3000/api-docs`.
 
 ## Production deployment
 
-The supported deployment shape is Neon PostgreSQL, Render for the Node/Express API, and Vercel for the Vue frontend. Deploy in this order so the API is never started against an unprepared database.
+The production architecture is Vercel (Vue/Vite frontend) → Render (Node/Express API) → Neon (PostgreSQL). The live services are [yourfavoriteprofile.vercel.app](https://yourfavoriteprofile.vercel.app/), [yourfavoriteprofile-api.onrender.com/api](https://yourfavoriteprofile-api.onrender.com/api), and [Swagger UI](https://yourfavoriteprofile-api.onrender.com/api-docs).
 
-1. Create a Neon PostgreSQL database and copy its connection URL. Keep SSL enabled; Neon URLs normally include `sslmode=require`.
-2. Configure the Render service with the backend directory, build command `yarn install --frozen-lockfile`, and start command `yarn start`. Set the backend variables listed below, including `DATABASE_URL` and a strong random `JWT_SECRET`.
-3. Run migrations once against the new Neon database from a trusted environment, before serving traffic:
+1. Create the Neon PostgreSQL database and keep its SSL-enabled `DATABASE_URL` private.
+2. From a trusted environment, set that URL and apply the migrations before serving traffic:
 
    ```bash
    cd backend
    DATABASE_URL="<neon-connection-url>" yarn db:migrate
+   DATABASE_URL="<neon-connection-url>" yarn db:status
    ```
 
-   The migration runner only requires `DATABASE_URL`, applies the empty-database baseline followed by migrations 002–007, and uses a transaction and advisory lock. It has no destructive reset command. Do not add `db:migrate` to the Render start command.
-4. Set Render `FRONTEND_URL` to the exact Vercel origin (scheme and host, without a path). The backend uses this value for CORS. Render supplies `PORT` automatically.
-5. Create a Vercel project for `frontend/`, use `yarn install --frozen-lockfile` as the install command and `yarn build` as the build command, and set `VITE_API_URL` to the Render API base URL ending in `/api`. This is a public URL and must not contain secrets.
-6. After both services are live, run the smoke tests below. Direct Vue routes are supported by the committed `frontend/vercel.json` SPA rewrite.
+   The runner applies the empty-database baseline followed by migrations 002–007, uses a transaction and advisory lock, and has no destructive reset command. Never add migrations to Render startup.
+3. Configure Render with root directory `backend/`, build command `yarn install --frozen-lockfile`, start command `yarn start`, and the backend environment variables below. Set `FRONTEND_URL` to the exact Vercel origin.
+4. Configure Vercel with root directory `frontend/`, build command `yarn build`, and `VITE_API_URL` pointing to the Render API URL ending in `/api`.
+5. Smoke-test `/`, `/browse`, `/search?q=test`, a direct profile URL, registration/login, public profile loading, media search, and one authenticated request. Check the browser console for CORS or API failures.
 
 Required Render variables: `DATABASE_URL`, `JWT_SECRET`, `TMDB_API_KEY`, `RAWG_API_KEY`, and `FRONTEND_URL`. `PORT` is supplied by Render and is optional in configuration.
 
 Required Vercel variable: `VITE_API_URL`.
 
-Post-deployment smoke tests: open `/`, `/browse`, `/search?q=test`, and a direct profile URL; register and log in; check one public profile; perform one media search; verify a protected request returns normally; and confirm the browser has no failed CORS requests. Keep provider keys and the database URL only in server-side Render settings.
+`VITE_API_URL` is public. Keep the database URL, JWT secret, and provider API keys only in Render/server-side settings. The committed `frontend/vercel.json` provides the Vue Router history-mode fallback for direct navigation and refresh.
 
 ### Frontend
 
@@ -190,9 +211,9 @@ The Vite development server listens on `http://localhost:5173` by default.
 
 ## API Documentation
 
-The backend includes interactive OpenAPI documentation through Swagger UI:
+The production backend includes interactive OpenAPI documentation through Swagger UI:
 
-`http://localhost:3000/api-docs`
+[yourfavoriteprofile-api.onrender.com/api-docs](https://yourfavoriteprofile-api.onrender.com/api-docs)
 
 The documentation lets developers inspect API endpoints, request parameters and bodies, response schemas, and test public endpoints directly. Use Swagger UI's **Authorize** button to provide a JWT Bearer token and test protected endpoints. Protected endpoints use Bearer JWT authentication; endpoints with optional authentication remain usable anonymously.
 

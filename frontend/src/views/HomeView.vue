@@ -54,7 +54,7 @@ const heroPosters = computed(() =>
         <h1>Rate every episode.<br />Build your <span>series score</span>.</h1>
         <p>
           Movies, series, and games in one place. Episode-by-episode reviewing
-          and automatic series scoring are currently in development.
+          and automatic series scoring are built into the experience.
         </p>
         <div class="hero-actions">
           <router-link
