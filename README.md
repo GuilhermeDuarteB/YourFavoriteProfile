@@ -153,6 +153,30 @@ The API listens on `http://localhost:3000` by default. `yarn start` runs the pro
 
 Swagger UI is available at `http://localhost:3000/api-docs`.
 
+## Production deployment
+
+The supported deployment shape is Neon PostgreSQL, Render for the Node/Express API, and Vercel for the Vue frontend. Deploy in this order so the API is never started against an unprepared database.
+
+1. Create a Neon PostgreSQL database and copy its connection URL. Keep SSL enabled; Neon URLs normally include `sslmode=require`.
+2. Configure the Render service with the backend directory, build command `yarn install --frozen-lockfile`, and start command `yarn start`. Set the backend variables listed below, including `DATABASE_URL` and a strong random `JWT_SECRET`.
+3. Run migrations once against the new Neon database from a trusted environment, before serving traffic:
+
+   ```bash
+   cd backend
+   DATABASE_URL="<neon-connection-url>" yarn db:migrate
+   ```
+
+   The migration runner only requires `DATABASE_URL`, applies the empty-database baseline followed by migrations 002–007, and uses a transaction and advisory lock. It has no destructive reset command. Do not add `db:migrate` to the Render start command.
+4. Set Render `FRONTEND_URL` to the exact Vercel origin (scheme and host, without a path). The backend uses this value for CORS. Render supplies `PORT` automatically.
+5. Create a Vercel project for `frontend/`, use `yarn install --frozen-lockfile` as the install command and `yarn build` as the build command, and set `VITE_API_URL` to the Render API base URL ending in `/api`. This is a public URL and must not contain secrets.
+6. After both services are live, run the smoke tests below. Direct Vue routes are supported by the committed `frontend/vercel.json` SPA rewrite.
+
+Required Render variables: `DATABASE_URL`, `JWT_SECRET`, `TMDB_API_KEY`, `RAWG_API_KEY`, and `FRONTEND_URL`. `PORT` is supplied by Render and is optional in configuration.
+
+Required Vercel variable: `VITE_API_URL`.
+
+Post-deployment smoke tests: open `/`, `/browse`, `/search?q=test`, and a direct profile URL; register and log in; check one public profile; perform one media search; verify a protected request returns normally; and confirm the browser has no failed CORS requests. Keep provider keys and the database URL only in server-side Render settings.
+
 ### Frontend
 
 ```bash

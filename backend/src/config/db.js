@@ -1,4 +1,15 @@
-import pkg from 'pg';
+import pkg from "pg";
 const { Pool } = pkg;
-export const pools = new Pool({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 5000 });
-pools.on('error', () => console.error('Unexpected idle database connection error'));
+
+function getPoolConfig(connectionString = process.env.DATABASE_URL) {
+  const config = { connectionString, connectionTimeoutMillis: 5000 };
+  if (!connectionString) return config;
+  const url = new URL(connectionString);
+  if (url.searchParams.get("sslmode") === "require") config.ssl = {};
+  return config;
+}
+
+export const pools = new Pool(getPoolConfig());
+pools.on("error", () =>
+  console.error("Unexpected idle database connection error"),
+);
